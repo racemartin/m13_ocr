@@ -1,0 +1,20 @@
+# Environnement
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+
+# Docker
+*.log
+
+# IDE
+.DS_Store
+.vscode/
+.idea/

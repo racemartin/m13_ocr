@@ -1,0 +1,103 @@
+[project]
+name            = "ffe-chess-agent-backend"
+version         = "0.1.0"
+description     = "POC : agent IA pour l'apprentissage des ouvertures d'échecs (FFE), avec FastAPI, LangGraph, Milvus et MongoDB."
+authors         = [{name = "Rafael CEREZO MARTIN", email = "rafael.cerezo.martin@icloud.com"}]
+license         = {text = "MIT"}
+readme          = "README.md"
+requires-python = ">=3.12,<3.14"
+
+# #############################################################################
+# DÉPENDANCES DE PRODUCTION (API + AGENT IA + ÉCHECS + RAG + DB)
+# #############################################################################
+dependencies = [
+    # --- API & Serveur ---
+    "fastapi>=0.115.0",          # Framework web moderne pour créer l'API
+    "uvicorn[standard]>=0.32.0", # Serveur ASGI ultra-rapide pour exécuter FastAPI
+    "pydantic>=2.9.0",           # Validation de données et gestion de schémas (Inputs/Outputs)
+    "pydantic-settings>=2.5.0",  # Gestion simplifiée des paramètres de configuration via env vars
+    "python-dotenv>=1.0.1",      # Chargement des variables secrètes depuis un fichier .env
+    # --- Agent IA & Orchestration ---
+    "langgraph>=0.2.45",         # Orchestration de l'agent (graphe d'étapes, outils)
+    "langchain-anthropic>=0.3.0",# Intégration du LLM Claude comme cerveau de l'agent
+    "langchain-core>=0.3.15",    # Abstractions communes utilisées par LangGraph
+    # --- Logique échiquéenne ---
+    "python-chess>=1.999",       # Validation des positions FEN et légalité des coups
+    "stockfish>=3.28.0",         # Wrapper Python du moteur Stockfish (évaluation NNUE)
+    # --- RAG (contexte des ouvertures) ---
+    "pymilvus>=2.4.9",           # Client Python pour la base vectorielle Milvus
+    "sentence-transformers>=3.2.1", # Génération des embeddings (Qwen3-Embedding-0.6B)
+    # --- Persistance ---
+    "pymongo>=4.10.1",           # Client Python pour MongoDB (historique de sessions)
+    # --- Services externes (HTTP) ---
+    "httpx>=0.27.2",             # Client HTTP asynchrone (appels Lichess)
+    "google-api-python-client>=2.149.0", # Client officiel pour l'API YouTube Data v3
+]
+
+# #############################################################################
+# GROUPES DE DÉPENDANCES (DÉVELOPPEMENT & TEST)
+# #############################################################################
+[dependency-groups]
+dev = [
+    # Qualité et Style
+    "ruff>=0.14.14",             # Linter + formateur (remplace black/isort/flake8)
+    "mypy>=1.7.1",                # Vérificateur de types statique pour éviter les bugs
+    "pre-commit>=4.5.0",          # Automatisation des tests de style avant chaque commit Git
+    # Environnement de travail
+    "jupyterlab>=4.5.2",          # Interface interactive pour prototyper l'agent
+    "ipykernel>=7.1.0",           # Noyau Python pour l'exécution dans Jupyter
+    "tox>=4.27.0",                # Exécution des tests dans des environnements isolés
+]
+
+test = [
+    # Framework de test (requis pour la fiabilité du POC)
+    "pytest>=7.4.3",             # Framework principal pour les tests unitaires
+    "pytest-cov>=4.1.0",         # Mesure du taux de couverture de tests du code source
+    "pytest-asyncio>=0.21.1",    # Support pour tester les endpoints asynchrones de FastAPI
+    "httpx>=0.27.2",             # Client HTTP pour simuler des appels à l'API pendant les tests
+    "faker>=20.1.0",             # Génération de données factices (FEN, ouvertures) pour les tests
+]
+
+# #############################################################################
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+managed = true
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# #############################################################################
+# CUSTOM SETTINGS FOR CODE FORMATTING (By Rafael CEREZO MARTIN)
+# #############################################################################
+
+[tool.ruff]
+# Longueur de ligne maximale pour la lisibilité
+line-length = 80
+
+[tool.ruff.lint]
+# select....: Groupes de règles activés pour l'analyse
+# "E".......: Erreurs de style (PEP 8 standard)
+# "F".......: Erreurs logiques et de syntaxe (Pyflakes)
+# "W".......: Avertissements sur les pratiques déconseillées
+select = ["E", "F", "W"]
+
+# ignore....: Règles spécifiques désactivées pour permettre ton style visuel
+# "E221"....: Espaces multiples avant l'opérateur (Alignement des '=')
+# "E241"....: Espaces multiples après une virgule (Alignement des listes)
+# "E203"....: Espace avant les deux-points ':' (Prints et dictionnaires)
+# "E271"....: Espaces multiples après 'import' ou 'from'
+# "E701"....: Plusieurs instructions sur une ligne après ':'
+# "E501"....: Longueur de ligne excédée (Autorise les longs commentaires)
+# "W291"....: Espaces blancs à la fin des lignes
+# "W293"....: Espaces blancs sur les lignes vides
+ignore = ["E221", "E241", "E203", "E271", "E701", "E501", "W291", "W293"]
+
+[tool.ruff.format]
+# Paramètres du formateur automatique
+quote-style            = "double"
+indent-style            = "space"
+skip-magic-trailing-comma = true

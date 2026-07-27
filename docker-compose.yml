@@ -1,0 +1,20 @@
+# ==================================================================
+# Docker Compose - Etape 1 de la mission
+# Ne lance pour l'instant que le service backend (Hello World +
+# /api/v1/healthcheck). Les services frontend, MongoDB et Milvus
+# seront ajoutes aux etapes suivantes de la mission.
+# ==================================================================
+services:
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/app:/code/app   # rechargement a chaud en dev
+    command: >
+      uv run uvicorn app.main:application
+      --host 0.0.0.0 --port 8000 --reload
