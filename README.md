@@ -220,3 +220,42 @@ dans [`backend/README.md`](backend/README.md).
   sont volontairement tolérants aux pannes : une indisponibilité
   externe ne doit jamais faire planter l'agent, seulement dégrader la
   réponse (voir note ci-dessus sur l'étape 2).
+
+  ### Résilience de `/moves/{fen}` : repli local Polyglot
+
+Pour ne pas dépendre uniquement de la disponibilité de Lichess (voir
+panne documentée ci-dessus), l'endpoint `/moves/{fen}` utilise un
+adaptateur composite avec repli automatique :
+
+1. Tente d'abord l'**API Lichess** (Opening Explorer).
+2. Si elle échoue ou renvoie une liste vide, retombe sur un **livre
+   Polyglot local** (`data/polyglot/livre_ouvertures.bin`), lu sans
+   aucun appel réseau — donc jamais indisponible.
+
+```bash
+GET /api/v1/moves/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201
+```
+```json
+[
+  {"uci": "e2e4", "san": "e4", "nombre_parties": 1},
+  {"uci": "d2d4", "san": "d4", "nombre_parties": 1},
+  {"uci": "c2c4", "san": "c4", "nombre_parties": 1}
+]
+```
+
+> ⚠️ **Point d'attention** : pour les entrées venant du livre Polyglot,
+> `nombre_parties` n'est **pas** un nombre de parties réelles (contrairement
+> à Lichess) mais le *poids* (`weight`) assigné par le livre à ce coup —
+> réutilisé par simplicité dans le même champ du modèle de domaine.
+
+Le livre ne couvre que les lignes d'ouverture connues ; au-delà, il
+renvoie aussi une liste vide (comportement identique à Lichess), donc
+la logique de repli vers Stockfish (étape 3/4) reste cohérente.
+
+Variable d'environnement optionnelle (`.env`) :
+```properties
+POLYGLOT_BOOK_PATH=
+```
+Laissée vide, le code retombe automatiquement sur
+`data/polyglot/livre_ouvertures.bin` (chemin par défaut résolu dans
+`app/core/dependances.py`).

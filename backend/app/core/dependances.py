@@ -7,6 +7,7 @@
 
 # Bibliotheque standard
 import os                       # Lecture des variables d'environnement
+from   pathlib import Path           # Construction robuste de chemins
 from   functools import lru_cache    # Instances singleton reutilisables
 
 # Modules internes
@@ -22,12 +23,24 @@ from   app.infrastructure.adaptateur_python_chess import (  # Adaptateur
 from   app.infrastructure.adaptateur_lichess import (       # Adaptateur
     AdaptateurLichess,
 )
+from   app.infrastructure.adaptateur_polyglot import (      # Adaptateur
+    AdaptateurPolyglot,                                     # (secours local)
+)
+from   app.infrastructure.adaptateur_theorie_avec_secours import (  # Compo-
+    AdaptateurTheorieAvecSecours,                                    # sition
+)
 from   app.infrastructure.adaptateur_stockfish import (     # Adaptateur
     AdaptateurStockfish,
 )
 
 # Chemin par defaut du binaire Stockfish dans l'image Docker (Debian/apt)
 CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
+
+# Chemin par defaut du livre Polyglot de secours (relatif a app/core/)
+CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT = str(
+    Path(__file__).resolve().parent.parent.parent
+    / "data" / "polyglot" / "livre_ouvertures.bin"
+)
 
 
 # ------------------------------------------------------------------------
@@ -41,6 +54,22 @@ def obtenir_adaptateur_python_chess() -> AdaptateurPythonChess:
 @lru_cache
 def obtenir_adaptateur_lichess() -> AdaptateurLichess:
     return AdaptateurLichess()
+
+
+@lru_cache
+def obtenir_adaptateur_polyglot() -> AdaptateurPolyglot:
+    chemin_livre = os.getenv("POLYGLOT_BOOK_PATH") or (
+        CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT
+    )
+    return AdaptateurPolyglot(chemin_livre=chemin_livre)
+
+
+@lru_cache
+def obtenir_adaptateur_theorie() -> AdaptateurTheorieAvecSecours:
+    return AdaptateurTheorieAvecSecours(
+        principal = obtenir_adaptateur_lichess(),
+        secours   = obtenir_adaptateur_polyglot(),
+    )
 
 
 @lru_cache
@@ -60,7 +89,7 @@ def obtenir_adaptateur_stockfish() -> AdaptateurStockfish:
 def obtenir_service_coups_theoriques() -> ObtenirCoupsTheoriquesService:
     return ObtenirCoupsTheoriquesService(
         validateur = obtenir_adaptateur_python_chess(),
-        theorie    = obtenir_adaptateur_lichess(),
+        theorie    = obtenir_adaptateur_theorie(),
     )
 
 

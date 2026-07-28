@@ -1,5 +1,11 @@
 """Route de verification que le conteneur backend fonctionne."""
 
+# ############################################################################
+# Route de verification de sante du conteneur backend
+# ############################################################################
+# Permet de verifier que le service FastAPI repond correctement une fois
+# demarre (utilisee par le healthcheck Docker et par le frontend Angular).
+
 # ----------------------------------------------------------------
 # Framework web utilise pour exposer les routes de l'API
 # ----------------------------------------------------------------

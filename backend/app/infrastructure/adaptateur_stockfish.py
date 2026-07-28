@@ -16,6 +16,9 @@ from   app.domaine.modeles import Evaluation                # Modele
 from   app.domaine.ports.port_moteur_evaluation import (    # Port a
     PortMoteurEvaluation,                                   # implementer
 )
+from   app.tools.rafael.log_tool import LogTool    # Journalisation coloree
+
+log = LogTool(origin="adaptateur_stockfish")
 
 # Profondeur de recherche par defaut du moteur
 PROFONDEUR_PAR_DEFAUT = 15
@@ -37,6 +40,12 @@ class AdaptateurStockfish(PortMoteurEvaluation):
     @property
     def moteur(self) -> Stockfish:
         if self._moteur is None:
+            log.LEVEL_7_INFO(
+                "AdaptateurStockfish",
+                f"Demarrage du sous-processus Stockfish "
+                f"(binaire={self.chemin_binaire}, "
+                f"profondeur={self.profondeur})",
+            )
             self._moteur = Stockfish(
                 path  = self.chemin_binaire,
                 depth = self.profondeur,
@@ -47,6 +56,20 @@ class AdaptateurStockfish(PortMoteurEvaluation):
     # Evaluation de la position
     # ------------------------------------------------------------------
     def evaluer(self, fen: str) -> Evaluation:
+        log.START_ACTION(
+            "AdaptateurStockfish", "evaluer", "Evaluation de la position",
+        )
+        log.PARAMETER_VALUE("fen", fen)
+        log.PARAMETER_VALUE("profondeur", self.profondeur)
+
         self.moteur.set_fen_position(fen)
-        resultat = self.moteur.get_evaluation()
-        return Evaluation(type=resultat["type"], valeur=resultat["value"])
+        resultat   = self.moteur.get_evaluation()
+        evaluation = Evaluation(type=resultat["type"], valeur=resultat["value"])
+
+        log.PARAMETER_VALUE("type", evaluation.type)
+        log.PARAMETER_VALUE("valeur", evaluation.valeur)
+        log.FINISH_ACTION(
+            "AdaptateurStockfish", "evaluer",
+            f"{evaluation.type}={evaluation.valeur}",
+        )
+        return evaluation

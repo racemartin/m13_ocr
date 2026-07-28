@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copie du code applicatif
 COPY app ./app
 
+# Copie des donnees statiques (livre Polyglot de secours pour la theorie
+# des ouvertures, utilise si l'API Lichess est indisponible)
+COPY data ./data
+
 EXPOSE 8000
 
 CMD ["uv", "run", "uvicorn", "app.main:application", \
