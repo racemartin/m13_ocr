@@ -14,6 +14,14 @@ COPY pyproject.toml uv.lock README.md ./
 # Installation reproductible depuis le lockfile (sans les groupes dev/test)
 RUN uv sync --frozen --no-dev --no-group test
 
+# Binaire natif du moteur d'echecs (le paquet Python "stockfish" n'est
+# qu'un wrapper : il ne fonctionne pas sans ce binaire installe a part).
+# curl est requis par le healthcheck defini dans docker-compose.yml.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        stockfish \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copie du code applicatif
 COPY app ./app
 

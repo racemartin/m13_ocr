@@ -52,6 +52,7 @@ dev = [
 test = [
     # Framework de test (requis pour la fiabilité du POC)
     "pytest>=7.4.3",             # Framework principal pour les tests unitaires
+    "pytest-mock>=3.14",
     "pytest-cov>=4.1.0",         # Mesure du taux de couverture de tests du code source
     "pytest-asyncio>=0.21.1",    # Support pour tester les endpoints asynchrones de FastAPI
     "httpx>=0.27.2",             # Client HTTP pour simuler des appels à l'API pendant les tests
@@ -62,8 +63,12 @@ test = [
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.uv]
 managed = true
+# Application, pas une bibliotheque : uv ne doit pas construire de wheel: package = false
 package = true
 
 [build-system]

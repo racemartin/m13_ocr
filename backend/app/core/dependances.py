@@ -1,0 +1,71 @@
+# ############################################################################
+# Cablage des dependances (composition root)
+# ############################################################################
+# Seul module autorise a relier les ports du domaine a leurs adaptateurs
+# concrets. Les routers FastAPI ne dependent que des fonctions ci-dessous
+# via Depends(), jamais directement des classes d'infrastructure.
+
+# Bibliotheque standard
+import os                       # Lecture des variables d'environnement
+from   functools import lru_cache    # Instances singleton reutilisables
+
+# Modules internes
+from   app.application.obtenir_coups_theoriques_service import (  # Cas
+    ObtenirCoupsTheoriquesService,                                 # d'usage
+)
+from   app.application.evaluer_position_service import (    # Cas
+    EvaluerPositionService,                                 # d'usage
+)
+from   app.infrastructure.adaptateur_python_chess import (  # Adaptateur
+    AdaptateurPythonChess,
+)
+from   app.infrastructure.adaptateur_lichess import (       # Adaptateur
+    AdaptateurLichess,
+)
+from   app.infrastructure.adaptateur_stockfish import (     # Adaptateur
+    AdaptateurStockfish,
+)
+
+# Chemin par defaut du binaire Stockfish dans l'image Docker (Debian/apt)
+CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
+
+
+# ------------------------------------------------------------------------
+# Adaptateurs (une seule instance reutilisee pour toute l'application)
+# ------------------------------------------------------------------------
+@lru_cache
+def obtenir_adaptateur_python_chess() -> AdaptateurPythonChess:
+    return AdaptateurPythonChess()
+
+
+@lru_cache
+def obtenir_adaptateur_lichess() -> AdaptateurLichess:
+    return AdaptateurLichess()
+
+
+@lru_cache
+def obtenir_adaptateur_stockfish() -> AdaptateurStockfish:
+    # os.getenv(...) ne retombe sur le defaut QUE si la variable est
+    # absente ; si STOCKFISH_PATH="" (vide) dans le .env, on retombe
+    # aussi sur le defaut grace au "or" ci-dessous.
+    chemin_binaire = os.getenv("STOCKFISH_PATH") or (
+        CHEMIN_STOCKFISH_PAR_DEFAUT
+    )
+    return AdaptateurStockfish(chemin_binaire=chemin_binaire)
+
+
+# ------------------------------------------------------------------------
+# Cas d'utilisation (composent les ports via les adaptateurs ci-dessus)
+# ------------------------------------------------------------------------
+def obtenir_service_coups_theoriques() -> ObtenirCoupsTheoriquesService:
+    return ObtenirCoupsTheoriquesService(
+        validateur = obtenir_adaptateur_python_chess(),
+        theorie    = obtenir_adaptateur_lichess(),
+    )
+
+
+def obtenir_service_evaluation() -> EvaluerPositionService:
+    return EvaluerPositionService(
+        validateur = obtenir_adaptateur_python_chess(),
+        moteur     = obtenir_adaptateur_stockfish(),
+    )

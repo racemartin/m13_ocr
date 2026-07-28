@@ -1,20 +1,34 @@
-# ==================================================================
-# Docker Compose - Etape 1 de la mission
-# Ne lance pour l'instant que le service backend (Hello World +
-# /api/v1/healthcheck). Les services frontend, MongoDB et Milvus
-# seront ajoutes aux etapes suivantes de la mission.
-# ==================================================================
 services:
-
+  # --------------------------------------------------------------------
+  # Backend : API FastAPI (couche presentation + couche domaine)
+  # --------------------------------------------------------------------
   backend:
     build:
       context: ./backend
+    container_name: ffe_backend
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "8000:8000"
     env_file:
       - .env
-    volumes:
-      - ./backend/app:/code/app   # rechargement a chaud en dev
-    command: >
-      uv run uvicorn app.main:application
-      --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # --------------------------------------------------------------------
+  # Frontend : Angular servi par Nginx (reverse proxy vers le backend)
+  # --------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ffe_frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+
+# ------------------------------------------------------------------------
+# NOTE : Milvus (+ etcd + minio) et MongoDB seront ajoutes aux etapes 3/6
+# une fois les endpoints correspondants developpes (RAG, persistance).
+# ------------------------------------------------------------------------

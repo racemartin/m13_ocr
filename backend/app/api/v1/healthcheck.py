@@ -13,6 +13,8 @@ routeur = APIRouter()
 # ######################################################################
 # GET /api/v1/healthcheck : confirme que l'API repond correctement
 # ######################################################################
+
+
 @routeur.get("/healthcheck")
 def healthcheck() -> dict:
     """Retourne un statut simple utilise pour valider le deploiement.
