@@ -30,6 +30,7 @@ externes, choix techniques) est détaillée dans
 
 ## Architecture (vue Docker)
 
+```bash
 +-----------------------------------------------------------------------+
 | Poste de developpement (Docker Compose)                               |
 |                                          port 8081                    |
@@ -64,6 +65,8 @@ externes, choix techniques) est détaillée dans
 |     | Conteneur etcd |  | Conteneur minio |                           |
 |     +----------------+  +-----------------+                           |
 +-----------------------------------------------------------------------+
+```
+
 ## Prérequis
 
 - Git
