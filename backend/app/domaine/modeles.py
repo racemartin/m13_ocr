@@ -28,3 +28,13 @@ class Evaluation:
     valeur          : int          # Valeur associee au type
     coup_recommande : str | None = None    # Meilleur coup, notation UCI
     profondeur      : int         = 0      # Profondeur de recherche utilisee
+
+
+# ------------------------------------------------------------------------
+# Resultat combine de l'exploration d'une position (theorie ou moteur)
+# ------------------------------------------------------------------------
+@dataclass(frozen=True)
+class ResultatExploration:
+    type       : str                             # "theorie" ou "evaluation"
+    coups      : list[CoupTheorique] | None = None
+    evaluation : Evaluation          | None = None

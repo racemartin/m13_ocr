@@ -17,6 +17,9 @@ from   app.application.obtenir_coups_theoriques_service import (  # Cas
 from   app.application.evaluer_position_service import (    # Cas
     EvaluerPositionService,                                 # d'usage
 )
+from   app.application.explorer_position_service import (   # Cas
+    ExplorerPositionService,                                # d'usage combine
+)
 from   app.infrastructure.adaptateur_python_chess import (  # Adaptateur
     AdaptateurPythonChess,
 )
@@ -97,4 +100,11 @@ def obtenir_service_evaluation() -> EvaluerPositionService:
     return EvaluerPositionService(
         validateur = obtenir_adaptateur_python_chess(),
         moteur     = obtenir_adaptateur_stockfish(),
+    )
+
+
+def obtenir_service_exploration() -> ExplorerPositionService:
+    return ExplorerPositionService(
+        service_coups      = obtenir_service_coups_theoriques(),
+        service_evaluation = obtenir_service_evaluation(),
     )

@@ -14,7 +14,7 @@ from   app.application.evaluer_position_service import (    # Cas
 from   app.api.v1.schemas import EvaluationSchema           # Schema HTTP
 from   app.core.dependances import obtenir_service_evaluation  # Injection
 
-router = APIRouter()
+routeur = APIRouter()
 
 
 # ############################################################################
@@ -22,7 +22,7 @@ router = APIRouter()
 # ############################################################################
 # NOTE : {fen:path} (et non {fen}) car un FEN contient des "/" (separateurs
 # de rangees) qui casseraient le routing standard de FastAPI sinon.
-@router.get("/evaluate/{fen:path}", response_model=EvaluationSchema)
+@routeur.get("/evaluate/{fen:path}", response_model=EvaluationSchema)
 def evaluer_position(
     fen     : str,
     service : EvaluerPositionService = Depends(obtenir_service_evaluation),

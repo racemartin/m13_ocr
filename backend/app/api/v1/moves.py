@@ -16,7 +16,7 @@ from   app.core.dependances import (                        # Injection
     obtenir_service_coups_theoriques,                        # de dependance
 )
 
-router = APIRouter()
+routeur = APIRouter()
 
 
 # ############################################################################
@@ -24,7 +24,7 @@ router = APIRouter()
 # ############################################################################
 # NOTE : {fen:path} (et non {fen}) car un FEN contient des "/" (separateurs
 # de rangees) qui casseraient le routing standard de FastAPI sinon.
-@router.get("/moves/{fen:path}", response_model=list[CoupTheoriqueSchema])
+@routeur.get("/moves/{fen:path}", response_model=list[CoupTheoriqueSchema])
 def obtenir_coups_theoriques(
     fen     : str,
     service : ObtenirCoupsTheoriquesService = Depends(

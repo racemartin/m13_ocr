@@ -5,11 +5,16 @@
 # sont volontairement separes des modeles de domaine (dataclasses) afin de
 # ne jamais coupler le contrat HTTP a la representation interne du metier.
 
+# Bibliotheque standard
+from   typing import Literal    # Discriminant "theorie" | "evaluation"
+
 # Bibliotheques tierces
 from   pydantic import BaseModel    # Validation et serialisation
 
 # Modules internes
-from   app.domaine.modeles import CoupTheorique, Evaluation    # Modeles
+from   app.domaine.modeles import (    # Modeles
+    CoupTheorique, Evaluation, ResultatExploration,
+)
 
 
 class CoupTheoriqueSchema(BaseModel):
@@ -27,9 +32,9 @@ class CoupTheoriqueSchema(BaseModel):
 
 
 class DetailEvaluationSchema(BaseModel):
-    type   : str
-    valeur : int
-    score  : str    # Format lisible, ex. "+0.35" ou "#3"
+    type  : str
+    value : int
+    score : str    # Format lisible, ex. "+0.35" ou "#3"
 
 
 def _formater_score(evaluation: Evaluation) -> str:
@@ -44,20 +49,65 @@ def _formater_score(evaluation: Evaluation) -> str:
 
 
 class EvaluationSchema(BaseModel):
-    fen             : str
-    evaluation      : DetailEvaluationSchema
-    coup_recommande : str | None
-    profondeur      : int
+    fen       : str
+    evaluation: DetailEvaluationSchema
+    best_move : str | None
+    depth     : int
 
     @staticmethod
     def depuis_domaine(fen: str, evaluation: Evaluation) -> "EvaluationSchema":
         return EvaluationSchema(
             fen        = fen,
             evaluation = DetailEvaluationSchema(
-                type   = evaluation.type,
-                valeur = evaluation.valeur,
-                score  = _formater_score(evaluation),
+                type  = evaluation.type,
+                value = evaluation.valeur,
+                score = _formater_score(evaluation),
             ),
-            coup_recommande = evaluation.coup_recommande,
-            profondeur      = evaluation.profondeur,
+            best_move = evaluation.coup_recommande,
+            depth     = evaluation.profondeur,
         )
+
+
+# ------------------------------------------------------------------------
+# Schemas de /explore/{fen} : reponse discriminee par le champ "type"
+# ------------------------------------------------------------------------
+class ExplorationTheorieSchema(BaseModel):
+    fen   : str
+    type  : Literal["theorie"]
+    coups : list[CoupTheoriqueSchema]
+
+
+class ExplorationEvaluationSchema(BaseModel):
+    fen        : str
+    type       : Literal["evaluation"]
+    evaluation : DetailEvaluationSchema
+    best_move  : str | None
+    depth      : int
+
+
+def resultat_exploration_vers_schema(
+    fen: str, resultat: ResultatExploration,
+) -> ExplorationTheorieSchema | ExplorationEvaluationSchema:
+    """Convertit le resultat de domaine vers le schema HTTP adapte."""
+    if resultat.type == "theorie":
+        return ExplorationTheorieSchema(
+            fen   = fen,
+            type  = "theorie",
+            coups = [
+                CoupTheoriqueSchema.depuis_domaine(coup)
+                for coup in resultat.coups
+            ],
+        )
+
+    evaluation = resultat.evaluation
+    return ExplorationEvaluationSchema(
+        fen        = fen,
+        type       = "evaluation",
+        evaluation = DetailEvaluationSchema(
+            type  = evaluation.type,
+            value = evaluation.valeur,
+            score = _formater_score(evaluation),
+        ),
+        best_move = evaluation.coup_recommande,
+        depth     = evaluation.profondeur,
+    )
