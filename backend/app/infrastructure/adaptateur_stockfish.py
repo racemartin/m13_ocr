@@ -63,13 +63,21 @@ class AdaptateurStockfish(PortMoteurEvaluation):
         log.PARAMETER_VALUE("profondeur", self.profondeur)
 
         self.moteur.set_fen_position(fen)
-        resultat   = self.moteur.get_evaluation()
-        evaluation = Evaluation(type=resultat["type"], valeur=resultat["value"])
+        resultat      = self.moteur.get_evaluation()
+        meilleur_coup = self.moteur.get_best_move()
+        evaluation    = Evaluation(
+            type            = resultat["type"],
+            valeur          = resultat["value"],
+            coup_recommande = meilleur_coup,
+            profondeur      = self.profondeur,
+        )
 
         log.PARAMETER_VALUE("type", evaluation.type)
         log.PARAMETER_VALUE("valeur", evaluation.valeur)
+        log.PARAMETER_VALUE("coup_recommande", evaluation.coup_recommande)
         log.FINISH_ACTION(
             "AdaptateurStockfish", "evaluer",
-            f"{evaluation.type}={evaluation.valeur}",
+            f"{evaluation.type}={evaluation.valeur} "
+            f"coup={evaluation.coup_recommande}",
         )
         return evaluation

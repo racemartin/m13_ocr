@@ -26,10 +26,38 @@ class CoupTheoriqueSchema(BaseModel):
         )
 
 
-class EvaluationSchema(BaseModel):
+class DetailEvaluationSchema(BaseModel):
     type   : str
     valeur : int
+    score  : str    # Format lisible, ex. "+0.35" ou "#3"
+
+
+def _formater_score(evaluation: Evaluation) -> str:
+    """Convertit l'evaluation brute en score lisible (ex. '+0.35', '#3')."""
+    if evaluation.type == "mate":
+        signe = "+" if evaluation.valeur >= 0 else "-"
+        return f"{signe}#{abs(evaluation.valeur)}"
+
+    pions = evaluation.valeur / 100
+    signe = "+" if pions >= 0 else ""
+    return f"{signe}{pions:.2f}"
+
+
+class EvaluationSchema(BaseModel):
+    fen             : str
+    evaluation      : DetailEvaluationSchema
+    coup_recommande : str | None
+    profondeur      : int
 
     @staticmethod
-    def depuis_domaine(evaluation: Evaluation) -> "EvaluationSchema":
-        return EvaluationSchema(type=evaluation.type, valeur=evaluation.valeur)
+    def depuis_domaine(fen: str, evaluation: Evaluation) -> "EvaluationSchema":
+        return EvaluationSchema(
+            fen        = fen,
+            evaluation = DetailEvaluationSchema(
+                type   = evaluation.type,
+                valeur = evaluation.valeur,
+                score  = _formater_score(evaluation),
+            ),
+            coup_recommande = evaluation.coup_recommande,
+            profondeur      = evaluation.profondeur,
+        )

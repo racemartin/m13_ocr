@@ -19,7 +19,10 @@ def test_evaluation_retourne_le_score_en_centipawns(client):
     service = EvaluerPositionService(
         validateur = FauxValidateurEchecs(fen_valide=True),
         moteur     = FauxMoteurEvaluation(
-            evaluation=Evaluation(type="cp", valeur=35),
+            evaluation=Evaluation(
+                type="cp", valeur=35,
+                coup_recommande="f1b5", profondeur=15,
+            ),
         ),
     )
     client.app.dependency_overrides[obtenir_service_evaluation] = (
@@ -29,14 +32,22 @@ def test_evaluation_retourne_le_score_en_centipawns(client):
     reponse = client.get(f"/api/v1/evaluate/{FEN_POSITION_DEPART}")
 
     assert reponse.status_code == 200
-    assert reponse.json() == {"type": "cp", "valeur": 35}
+    assert reponse.json() == {
+        "fen"             : FEN_POSITION_DEPART,
+        "evaluation"      : {"type": "cp", "valeur": 35, "score": "+0.35"},
+        "coup_recommande" : "f1b5",
+        "profondeur"      : 15,
+    }
 
 
 def test_evaluation_retourne_un_mat_annonce(client):
     service = EvaluerPositionService(
         validateur = FauxValidateurEchecs(fen_valide=True),
         moteur     = FauxMoteurEvaluation(
-            evaluation=Evaluation(type="mate", valeur=3),
+            evaluation=Evaluation(
+                type="mate", valeur=3,
+                coup_recommande="d1h5", profondeur=15,
+            ),
         ),
     )
     client.app.dependency_overrides[obtenir_service_evaluation] = (
@@ -46,7 +57,9 @@ def test_evaluation_retourne_un_mat_annonce(client):
     reponse = client.get(f"/api/v1/evaluate/{FEN_POSITION_DEPART}")
 
     assert reponse.status_code == 200
-    assert reponse.json() == {"type": "mate", "valeur": 3}
+    corps = reponse.json()
+    assert corps["evaluation"] == {"type": "mate", "valeur": 3, "score": "+#3"}
+    assert corps["coup_recommande"] == "d1h5"
 
 
 def test_evaluation_fen_invalide_retourne_422(client):

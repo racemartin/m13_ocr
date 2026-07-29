@@ -104,9 +104,16 @@ Réponse attendue :
 Depuis un autre poste du réseau local (remplacer par l'IP de la
 machine hôte) :
 
+ A travers du frontend avec la App Angular (port 8001):
 ```
 http://192.168.1.146:8081/api/v1/healthcheck
 ```
+
+Directement au backend dans la API (port 8000):
+```
+http://192.168.1.146:8000/docs
+```
+
 
 ## Tester les endpoints de l'étape 2
 
@@ -259,3 +266,49 @@ POLYGLOT_BOOK_PATH=
 Laissée vide, le code retombe automatiquement sur
 `data/polyglot/livre_ouvertures.bin` (chemin par défaut résolu dans
 `app/core/dependances.py`).
+
+### Réponse enrichie de `/evaluate/{fen}`
+
+Depuis l'étape 2, `/evaluate/{fen}` ne retourne plus seulement un score
+brut : la réponse inclut aussi le coup recommandé par Stockfish, la
+profondeur de recherche utilisée, et le FEN en écho (utile pour tracer
+plusieurs appels en parallèle dans les logs).
+
+```bash
+GET /api/v1/evaluate/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201
+```
+```json
+{
+  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "evaluation": {
+    "type": "cp",
+    "valeur": 39,
+    "score": "+0.39"
+  },
+  "coup_recommande": "e2e4",
+  "profondeur": 15
+}
+```
+
+> ⚠️ **Décision en attente** : les champs sont actuellement nommés en
+> français (`valeur`, `coup_recommande`, `profondeur`), cohérent avec le
+> reste de l'API (`nombre_parties`, etc.). Si le frontend Angular ou un
+> client externe attend des noms anglais (`value`, `best_move`, `depth`),
+> il faudra renommer les champs dans `app/api/v1/schemas.py` avant
+> l'étape 5 — c'est un changement isolé à ce seul fichier.
+
+
+---
+
+## Auteur
+
+**Rafael Cerezo Martín**
+
+- Email : [rafael.cerezo.martin@icloud.com](mailto:rafael.cerezo.martin@icloud.com)
+- GitHub : [@racemartin](https://github.com/racemartin)
+
+---
+
+## Licence
+
+MIT License — voir [LICENSE](LICENSE) pour les détails.

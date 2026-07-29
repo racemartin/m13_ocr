@@ -33,4 +33,4 @@ def evaluer_position(
     except ValueError as erreur:
         raise HTTPException(status_code=422, detail=str(erreur)) from erreur
 
-    return EvaluationSchema.depuis_domaine(evaluation)
+    return EvaluationSchema.depuis_domaine(fen, evaluation)

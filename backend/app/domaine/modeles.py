@@ -24,5 +24,7 @@ class CoupTheorique:
 # ------------------------------------------------------------------------
 @dataclass(frozen=True)
 class Evaluation:
-    type   : str    # "cp" (centipawns) ou "mate" (mat en N coups)
-    valeur : int    # Valeur associee au type (centipawns ou nb de coups)
+    type            : str          # "cp" (centipawns) ou "mate" (mat en N)
+    valeur          : int          # Valeur associee au type
+    coup_recommande : str | None = None    # Meilleur coup, notation UCI
+    profondeur      : int         = 0      # Profondeur de recherche utilisee
