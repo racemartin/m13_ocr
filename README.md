@@ -104,7 +104,7 @@ Réponse attendue :
 Depuis un autre poste du réseau local (remplacer par l'IP de la
 machine hôte) :
 
- A travers du frontend avec la App Angular (port 8001):
+ A travers du frontend avec la App Angular (port 8081):
 ```
 http://192.168.1.146:8081/api/v1/healthcheck
 ```
