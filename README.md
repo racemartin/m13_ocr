@@ -154,6 +154,7 @@ dans [`backend/README.md`](backend/README.md).
 > exécuté localement dans le conteneur).
 
 
+
 ## Étape 3 — Pipeline d'ingestion RAG
 
 Pour construire le corpus vectorisable (`data/corpus/*.md`), un pipeline en 3 scripts, chacun source-consciente sauf le dernier :
@@ -184,6 +185,31 @@ python scripts/ingestion/fetch_wikipedia.py
 python scripts/ingestion/build_corpus.py
 ```
 
+### Indexation et vérification
+
+Une fois le corpus généré (`data/corpus/*.md`), indexe-le dans Milvus puis vérifie :
+
+```bash
+uv run python scripts/ingestion/indexer_corpus.py
+uv run python scripts/ingestion/diagnostic_milvus.py
+```
+
+> ⚠️ **Point d'attention** : ces scripts, lancés depuis la machine hôte
+> (pas depuis un conteneur), doivent utiliser `MILVUS_HOST=localhost`
+> (le service Docker n'est résolu par son nom `milvus-standalone` que
+> *depuis l'intérieur* du réseau Docker) :
+> ```powershell
+> $env:MILVUS_HOST="localhost"
+> uv run python scripts/ingestion/indexer_corpus.py
+> ```
+> Le backend, lui, tourne dans le réseau Docker et résout
+> `milvus-standalone` sans configuration supplémentaire.
+
+> ⚠️ **`data/raw/` et `data/corpus/` sont dans `.gitignore`** — ce sont
+> des artefacts régénérables (JSON bruts, HTML de debug, corpus
+> normalisé), pas du code source. Seul `data/seeds/*.csv` (les listes
+> curées à la main) est versionné.
+
 ### Schéma commun des données brutes
 
 Les deux scripts de fetch écrivent un JSON par article, avec exactement les mêmes clés (`modele_brut.DonneeBrute`) :
@@ -201,6 +227,28 @@ Les deux scripts de fetch écrivent un JSON par article, avec exactement les mê
 - **Wikichess** : le contenu narratif n'est pas repéré par un motif de texte global, mais par l'élément DOM `<div align="justify">` — il en existe plusieurs par page (menu, footer...), donc seul celui contenant le séparateur `====` est retenu. Selon les pages, la prose se trouve avant `====`, après la ligne `Contributors :`, les deux, ou aucune (page purement statistique, cas normal — pas un bug).
 - Chaque page Wikichess en échec sauvegarde son HTML brut dans `data/raw/_debug/` pour inspection, sans bloquer le traitement des autres.
 - Traçabilité complète via LogTool (mêmes conventions que le reste du backend) : chaque script journalise ses paramètres, le détail de la première entrée traitée (utile pour diagnostiquer sans script séparé), et le compte final réussies/échouées.
+
+
+## Tester l'endpoint de l'étape 3 (RAG)
+
+```bash
+curl "http://localhost:8000/api/v1/vector-search?q=sicilienne&top_k=3"
+```
+
+Réponse attendue (`200`) :
+```json
+[
+  {
+    "texte": "...",
+    "ouverture": "Défense sicilienne",
+    "source_url": "https://fr.wikipedia.org/wiki/...",
+    "score": 0.87
+  }
+]
+```
+
+Une liste vide est une réponse valide (aucun contexte pertinent trouvé),
+pas une erreur.
 
 
 ## Structure du dépôt
@@ -240,7 +288,7 @@ Les deux scripts de fetch écrivent un JSON par article, avec exactement les mê
 |---|---|---|
 | 1 | Environnement de dev, `docker-compose.yml`, healthcheck | ✅ terminé |
 | 2 | Agent : endpoints `/moves/{fen}` et `/evaluate/{fen}` (python-chess, Lichess, Stockfish) | ✅ terminé |
-| 3 | RAG Milvus sur Wikichess (orchestration LangGraph) | à venir |
+| 3 | RAG Milvus : ingestion (Wikichess + Wikipedia), indexation, `/vector-search` | 🚧 en cours (LangGraph pas encore intégré) |
 | 4 | Intégration API YouTube | à venir |
 | 5 | Interface Angular (`ngx-chessboard`) | à venir |
 | 6 | Containerisation complète + démo | à venir |
@@ -255,9 +303,10 @@ Les deux scripts de fetch écrivent un JSON par article, avec exactement les mê
 | 4 | **Lichess API** | 2 | ✅ implémenté (service externe en panne) | `curl http://localhost:8000/api/v1/moves/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201` |
 | 4b | ↳ Lichess en direct (sans passer par notre API) | — | diagnostic | `curl "https://explorer.lichess.ovh/masters?fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201"` |
 | 5 | **LangGraph** (orchestration de l'agent) | 3 | ⏳ à venir | *(pas de commande pour l'instant — sera testé via l'endpoint qui l'utilisera, une fois implémenté)* |
-| 6 | **etcd** (métadonnées de Milvus) | 3 | ⏳ à venir | `docker compose exec etcd etcdctl endpoint health` |
-| 7 | **minio** (stockage objets de Milvus) | 3 | ⏳ à venir | `curl -I http://localhost:9000/minio/health/live` |
-| 8 | **Milvus** | 3 | ⏳ à venir | `curl http://localhost:9091/healthz` |
+| 6 | **etcd** (métadonnées de Milvus) | 3 | ✅ implémenté | `docker compose exec etcd etcdctl endpoint health` |
+| 7 | **minio** (stockage objets de Milvus) | 3 | ✅ implémenté | `curl -I http://localhost:9002/minio/health/live` *(port remappé)* |
+| 8 | **Milvus** | 3 | ✅ implémenté | `curl http://localhost:9091/healthz` |
+| 8b | ↳ Diagnostic du contenu indexé | 3 | ✅ implémenté | `uv run python scripts/ingestion/diagnostic_milvus.py` |
 | 9 | **YouTube API** | 4 | ⏳ à venir | `curl "https://www.googleapis.com/youtube/v3/search?part=snippet&q=chess+opening&key=$Env:YOUTUBE_API_KEY"` |
 | 10 | **MongoDB** | 6 | ⏳ à venir | `mongosh "mongodb://localhost:27017" --eval "db.runCommand({ ping: 1 })"` |
 
