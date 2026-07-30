@@ -153,6 +153,56 @@ dans [`backend/README.md`](backend/README.md).
 > `/evaluate/{fen}` n'est pas concerné (ne dépend que de Stockfish,
 > exécuté localement dans le conteneur).
 
+
+## Étape 3 — Pipeline d'ingestion RAG
+
+Pour construire le corpus vectorisable (`data/corpus/*.md`), un pipeline en 3 scripts, chacun source-consciente sauf le dernier :
+
+```
+data/seeds/*.csv (curés à la main)
+        |
+        v
+scripts/ingestion/fetch_wikichess.py    scripts/ingestion/fetch_wikipedia.py
+        |                                        |
+        v                                        v
+data/raw/wikichess/*.json               data/raw/wikipedia/*.json
+        |                                        |
+        +------------------+---------------------+
+                            v
+             scripts/ingestion/build_corpus.py
+                            |
+                            v
+                   data/corpus/*.md
+```
+
+### Exécution
+
+```bash
+cd backend
+python scripts/ingestion/fetch_wikichess.py
+python scripts/ingestion/fetch_wikipedia.py
+python scripts/ingestion/build_corpus.py
+```
+
+### Schéma commun des données brutes
+
+Les deux scripts de fetch écrivent un JSON par article, avec exactement les mêmes clés (`modele_brut.DonneeBrute`) :
+```json
+{
+  "source": "wikichess" | "wikipedia",
+  "nom": "...", "categorie": "...", "url": "...", "langue": "en" | "fr",
+  "extrait": "...", "metadonnees": {}, "recupere_le": "..."
+}
+```
+
+### Points de vigilance découverts en conditions réelles
+
+- **API Wikimedia** : exige un `User-Agent` descriptif (nom du projet + contact) — sans lui, `403 Forbidden` systématique. Confirmé empiriquement : 165/165 échecs sans ce header, résolu en l'ajoutant.
+- **Wikichess** : le contenu narratif n'est pas repéré par un motif de texte global, mais par l'élément DOM `<div align="justify">` — il en existe plusieurs par page (menu, footer...), donc seul celui contenant le séparateur `====` est retenu. Selon les pages, la prose se trouve avant `====`, après la ligne `Contributors :`, les deux, ou aucune (page purement statistique, cas normal — pas un bug).
+- Chaque page Wikichess en échec sauvegarde son HTML brut dans `data/raw/_debug/` pour inspection, sans bloquer le traitement des autres.
+- Traçabilité complète via LogTool (mêmes conventions que le reste du backend) : chaque script journalise ses paramètres, le détail de la première entrée traitée (utile pour diagnostiquer sans script séparé), et le compte final réussies/échouées.
+
+
 ## Structure du dépôt
 
 ```

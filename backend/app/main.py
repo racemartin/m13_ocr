@@ -13,6 +13,7 @@ from   app.api.v1 import healthcheck    # Route de verification de sante
 from   app.api.v1 import moves          # Route des coups theoriques
 from   app.api.v1 import evaluate       # Route d'evaluation de position
 from   app.api.v1 import explore        # Route combinee (theorie/moteur)
+from   app.api.v1 import vector_search  # Route de recherche vectorielle (RAG)
 
 
 # ##############################################################################
@@ -25,10 +26,11 @@ application = FastAPI(
 )
 
 # Enregistrement des routeurs versionnes de l'API
-application.include_router(healthcheck.routeur, prefix="/api/v1")
-application.include_router(moves.routeur,       prefix="/api/v1")
-application.include_router(evaluate.routeur,    prefix="/api/v1")
-application.include_router(explore.routeur,     prefix="/api/v1")
+application.include_router(healthcheck.routeur,   prefix="/api/v1")
+application.include_router(moves.routeur,         prefix="/api/v1")
+application.include_router(evaluate.routeur,      prefix="/api/v1")
+application.include_router(explore.routeur,       prefix="/api/v1")
+application.include_router(vector_search.routeur, prefix="/api/v1")
 
 # ######################################################################
 # GET / : racine de l'API, simple message de bienvenue

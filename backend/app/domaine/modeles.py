@@ -38,3 +38,14 @@ class ResultatExploration:
     type       : str                             # "theorie" ou "evaluation"
     coups      : list[CoupTheorique] | None = None
     evaluation : Evaluation          | None = None
+
+
+# ------------------------------------------------------------------------
+# Extrait de connaissance retrouve par recherche vectorielle (RAG, Milvus)
+# ------------------------------------------------------------------------
+@dataclass(frozen=True)
+class ExtraitConnaissance:
+    texte      : str    # Contenu textuel de l'extrait
+    ouverture  : str    # Nom de l'ouverture concernee
+    source_url : str    # URL de la source d'origine (Wikipedia, Wikichess)
+    score      : float  # Score de similarite (plus haut = plus pertinent)

@@ -22,11 +22,19 @@ dependencies = [
     "langchain-anthropic>=0.3.0",# Intégration du LLM Claude comme cerveau de l'agent
     "langchain-core>=0.3.15",    # Abstractions communes utilisées par LangGraph
     # --- Logique échiquéenne ---
-    "python-chess>=1.999",       # Validation des positions FEN et légalité des coups
+    "chess>=1.11.1",             # Validation des positions FEN et légalité des coups
+    # NOTE : le paquet PyPI s'appelle "chess" (import chess), pas
+    # "python-chess" -- c'est le depot GitHub qui porte ce nom, pas le
+    # paquet a installer. Verifie via `pip install chess` + `import chess`.
     "stockfish>=3.28.0",         # Wrapper Python du moteur Stockfish (évaluation NNUE)
+    "beautifulsoup4>=4.12.0",    # Parsing HTML (scraping Wikichess, sans API dispo)
     # --- RAG (contexte des ouvertures) ---
     "pymilvus>=2.4.9",           # Client Python pour la base vectorielle Milvus
     "sentence-transformers>=3.2.1", # Génération des embeddings (Qwen3-Embedding-0.6B)
+    "torch>=2.0,<3.0",           # Dependance de sentence-transformers -- explicite
+    # ici pour pouvoir la forcer en CPU-only si besoin (voir NOTE plus bas),
+    # sinon uv resout parfois la variante CUDA par defaut (plusieurs Go
+    # inutiles pour un POC qui tourne sur CPU).
     # --- Persistance ---
     "pymongo>=4.10.1",           # Client Python pour MongoDB (historique de sessions)
     # --- Services externes (HTTP) ---
@@ -68,8 +76,19 @@ testpaths = ["tests"]
 
 [tool.uv]
 managed = true
-# Application, pas une bibliotheque : uv ne doit pas construire de wheel: package = false
-package = true
+package = true    # Paquet installable reel (voir [tool.hatch.build] ci-dessus)
+
+# NOTE optionnelle : pour forcer torch en version CPU-only (image Docker
+# bien plus legere -- le defaut PyPI inclut le support CUDA, inutile pour
+# un POC qui tourne sur CPU). Decommenter si l'espace disque/temps de
+# build devient un probleme, puis relancer `uv lock`.
+# [tool.uv.sources]
+# torch = [{ index = "pytorch-cpu" }]
+#
+# [[tool.uv.index]]
+# name = "pytorch-cpu"
+# url = "https://download.pytorch.org/whl/cpu"
+# explicit = true
 
 [build-system]
 requires = ["hatchling"]

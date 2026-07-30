@@ -6,7 +6,9 @@
 # vrais adaptateurs, via les dependency_overrides de FastAPI.
 
 # Modules internes
-from   app.domaine.modeles import CoupTheorique, Evaluation    # Modeles
+from   app.domaine.modeles import (    # Modeles
+    CoupTheorique, Evaluation, ExtraitConnaissance,
+)
 from   app.domaine.ports.port_validateur_echecs import (       # Ports
     PortValidateurEchecs,
 )
@@ -15,6 +17,9 @@ from   app.domaine.ports.port_theorie_ouvertures import (
 )
 from   app.domaine.ports.port_moteur_evaluation import (
     PortMoteurEvaluation,
+)
+from   app.domaine.ports.port_base_connaissances import (
+    PortBaseConnaissances,
 )
 
 
@@ -49,3 +54,18 @@ class FauxMoteurEvaluation(PortMoteurEvaluation):
 
     def evaluer(self, fen: str) -> Evaluation:
         return self.evaluation
+
+
+class FauxBaseConnaissances(PortBaseConnaissances):
+    """Simule Milvus sans dependre d'un serveur reel ni d'un modele."""
+
+    def __init__(self, extraits: list[ExtraitConnaissance] | None = None) -> None:
+        self.extraits = extraits if extraits is not None else []
+
+    def indexer_documents(self, dossier: str) -> int:
+        return len(self.extraits)
+
+    def rechercher_contexte(
+        self, requete: str, top_k: int = 3,
+    ) -> list[ExtraitConnaissance]:
+        return self.extraits[:top_k]

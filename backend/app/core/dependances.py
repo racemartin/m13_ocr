@@ -20,6 +20,9 @@ from   app.application.evaluer_position_service import (    # Cas
 from   app.application.explorer_position_service import (   # Cas
     ExplorerPositionService,                                # d'usage combine
 )
+from   app.application.rechercher_contexte_ouverture_service import (  # Cas
+    RechercherContexteOuvertureService,                                 # RAG
+)
 from   app.infrastructure.adaptateur_python_chess import (  # Adaptateur
     AdaptateurPythonChess,
 )
@@ -35,6 +38,7 @@ from   app.infrastructure.adaptateur_theorie_avec_secours import (  # Compo-
 from   app.infrastructure.adaptateur_stockfish import (     # Adaptateur
     AdaptateurStockfish,
 )
+from   app.infrastructure.adaptateur_milvus import AdaptateurMilvus  # RAG
 
 # Chemin par defaut du binaire Stockfish dans l'image Docker (Debian/apt)
 CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
@@ -44,6 +48,11 @@ CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT = str(
     Path(__file__).resolve().parent.parent.parent
     / "data" / "polyglot" / "livre_ouvertures.bin"
 )
+
+# Parametres par defaut de la base vectorielle (Etape 3)
+MILVUS_HOTE_PAR_DEFAUT   = "milvus-standalone"
+MILVUS_PORT_PAR_DEFAUT   = "19530"
+MODELE_EMBEDDINGS_PAR_DEFAUT = "paraphrase-multilingual-MiniLM-L12-v2"
 
 
 # ------------------------------------------------------------------------
@@ -86,6 +95,20 @@ def obtenir_adaptateur_stockfish() -> AdaptateurStockfish:
     return AdaptateurStockfish(chemin_binaire=chemin_binaire)
 
 
+@lru_cache
+def obtenir_adaptateur_milvus() -> AdaptateurMilvus:
+    # NOTE : la connexion a Milvus et le chargement du modele d'embeddings
+    # se font ici, au premier appel (via @lru_cache) -- pas a l'import du
+    # module. Operation relativement lente (quelques secondes), executee
+    # une seule fois pour toute la duree de vie de l'application.
+    return AdaptateurMilvus(
+        hote                   = os.getenv("MILVUS_HOST") or MILVUS_HOTE_PAR_DEFAUT,
+        port                   = os.getenv("MILVUS_PORT") or MILVUS_PORT_PAR_DEFAUT,
+        nom_modele_embeddings  = os.getenv("EMBEDDING_MODEL_NAME")
+                                  or MODELE_EMBEDDINGS_PAR_DEFAUT,
+    )
+
+
 # ------------------------------------------------------------------------
 # Cas d'utilisation (composent les ports via les adaptateurs ci-dessus)
 # ------------------------------------------------------------------------
@@ -107,4 +130,10 @@ def obtenir_service_exploration() -> ExplorerPositionService:
     return ExplorerPositionService(
         service_coups      = obtenir_service_coups_theoriques(),
         service_evaluation = obtenir_service_evaluation(),
+    )
+
+
+def obtenir_service_recherche_contexte() -> RechercherContexteOuvertureService:
+    return RechercherContexteOuvertureService(
+        base_connaissances = obtenir_adaptateur_milvus(),
     )

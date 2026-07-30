@@ -13,7 +13,7 @@ from   pydantic import BaseModel    # Validation et serialisation
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles
-    CoupTheorique, Evaluation, ResultatExploration,
+    CoupTheorique, Evaluation, ExtraitConnaissance, ResultatExploration,
 )
 
 
@@ -111,3 +111,24 @@ def resultat_exploration_vers_schema(
         best_move = evaluation.coup_recommande,
         depth     = evaluation.profondeur,
     )
+
+
+# ------------------------------------------------------------------------
+# Schema de /vector-search : contexte retrouve par recherche vectorielle
+# ------------------------------------------------------------------------
+class ExtraitConnaissanceSchema(BaseModel):
+    texte      : str
+    ouverture  : str
+    source_url : str
+    score      : float
+
+    @staticmethod
+    def depuis_domaine(
+        extrait: ExtraitConnaissance,
+    ) -> "ExtraitConnaissanceSchema":
+        return ExtraitConnaissanceSchema(
+            texte      = extrait.texte,
+            ouverture  = extrait.ouverture,
+            source_url = extrait.source_url,
+            score      = extrait.score,
+        )
