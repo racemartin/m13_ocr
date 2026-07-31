@@ -28,6 +28,41 @@ externes, choix techniques) est détaillée dans
 | Gestionnaire de paquets Python | `uv` |
 | Orchestration | Docker Compose |
 
+## Key Commands
+
+```bash
+# Docker
+docker compose up --build
+docker compose down
+
+# Test API healthcheck
+curl http://localhost:8000/api/v1/healthcheck
+http://192.168.1.146:8000/docs
+
+# Test ANGULAR App  (Verify API healthcheck)
+curl http://192.168.1.146:8081/api/v1/healthcheck
+
+# Ingestion
+$env:MILVUS_HOST="localhost"
+uv run python scripts/ingestion/drop_collection.py
+
+uv run python scripts/ingestion/fetch_wikichess.py
+uv run python scripts/ingestion/fetch_wikipedia.py
+uv run python scripts/ingestion/build_corpus.py
+
+# Test MILVUS
+Invoke-WebRequest -Uri http://localhost:9091/healthz -UseBasicParsing
+
+# Test MINIO
+http://192.168.1.146:9091/healthz
+
+# Test API vector-search
+uv run python scripts/ingestion/indexer_corpus.py
+uv run python scripts/ingestion/diagnostic_milvus.py
+curl http://localhost:8000/api/v1/vector-search?q=sicilienne
+
+```
+
 ## Architecture (vue Docker)
 
 ```bash

@@ -39,6 +39,10 @@ from   app.infrastructure.adaptateur_stockfish import (     # Adaptateur
     AdaptateurStockfish,
 )
 from   app.infrastructure.adaptateur_milvus import AdaptateurMilvus  # RAG
+from   app.infrastructure.adaptateur_checkpointer_mongo import (  # Check-
+    construire_checkpointer_mongo,                                 # pointer
+)
+from   app.application.agent.graphe_agent import construire_graphe  # Agent
 
 # Chemin par defaut du binaire Stockfish dans l'image Docker (Debian/apt)
 CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
@@ -53,6 +57,9 @@ CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT = str(
 MILVUS_HOTE_PAR_DEFAUT   = "milvus-standalone"
 MILVUS_PORT_PAR_DEFAUT   = "19530"
 MODELE_EMBEDDINGS_PAR_DEFAUT = "paraphrase-multilingual-MiniLM-L12-v2"
+
+# Parametre par defaut de connexion MongoDB (persistance de l'agent)
+MONGO_URI_PAR_DEFAUT = "mongodb://mongodb:27017"
 
 
 # ------------------------------------------------------------------------
@@ -136,4 +143,23 @@ def obtenir_service_exploration() -> ExplorerPositionService:
 def obtenir_service_recherche_contexte() -> RechercherContexteOuvertureService:
     return RechercherContexteOuvertureService(
         base_connaissances = obtenir_adaptateur_milvus(),
+    )
+
+
+# ------------------------------------------------------------------------
+# Agent LangGraph (compose les trois services existants + Mongo)
+# ------------------------------------------------------------------------
+@lru_cache
+def obtenir_checkpointer_agent():
+    uri = os.getenv("MONGO_URI") or MONGO_URI_PAR_DEFAUT
+    return construire_checkpointer_mongo(uri=uri)
+
+
+@lru_cache
+def obtenir_graphe_agent():
+    return construire_graphe(
+        service_coups      = obtenir_service_coups_theoriques(),
+        service_evaluation = obtenir_service_evaluation(),
+        service_contexte   = obtenir_service_recherche_contexte(),
+        checkpointer        = obtenir_checkpointer_agent(),
     )

@@ -37,6 +37,7 @@ dependencies = [
     # inutiles pour un POC qui tourne sur CPU).
     # --- Persistance ---
     "pymongo>=4.10.1",           # Client Python pour MongoDB (historique de sessions)
+    "langgraph-checkpoint-mongodb>=0.1.0", # Checkpointer LangGraph sur Mongo
     # --- Services externes (HTTP) ---
     "httpx>=0.27.2",             # Client HTTP asynchrone (appels Lichess)
     "google-api-python-client>=2.149.0", # Client officiel pour l'API YouTube Data v3

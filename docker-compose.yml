@@ -12,6 +12,7 @@ services:
       - .env
     depends_on:
       - milvus-standalone
+      - mongodb
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/healthcheck"]
       interval: 10s
@@ -89,11 +90,24 @@ services:
       timeout: 10s
       retries: 3
 
+  # --------------------------------------------------------------------
+  # MongoDB : persistance de l'etat de l'agent (checkpointer LangGraph)
+  # --------------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: ffe_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   etcd_data:
   minio_data:
   milvus_data:
-
-# ------------------------------------------------------------------------
-# NOTE : MongoDB sera ajoute a l'etape 6 (persistance des sessions).
-# ------------------------------------------------------------------------
+  mongo_data:
