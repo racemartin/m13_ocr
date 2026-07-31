@@ -286,6 +286,145 @@ Une liste vide est une réponse valide (aucun contexte pertinent trouvé),
 pas une erreur.
 
 
+## Agent LangGraph — orchestration et persistance (MongoDB)
+
+L'agent complet est exposé par `POST /api/v1/agent/invoke`, qui
+orchestre via un `StateGraph` LangGraph les services déjà construits
+aux étapes 2 et 3, sans dupliquer leur logique :
+
+```
+        rechercher_theorie
+              |
+        theorie trouvee ? ---- oui ---> rechercher_contexte -> FIN
+              |
+             non
+              |
+        evaluer_position -> rechercher_contexte -> FIN
+```
+
+![Graphe de l'agent LangGraph](backend/docs/images/graphe_agent.png)
+
+*Schéma généré automatiquement depuis le code réel — voir
+[Visualiser le graphe](#visualiser-le-graphe) plus bas pour le
+régénérer après toute modification de `graphe_agent.py`.*
+
+### Installation
+
+```bash
+cd backend
+uv sync --group test
+```
+
+> ⚠️ **Point de vigilance** : `uv sync` (sans argument) n'installe
+> pas le groupe `test` (pytest, coverage, etc.) selon la version de
+> `uv`. Si `pytest` répond `ModuleNotFoundError` alors que le reste
+> du projet fonctionne, c'est la cause la plus probable — relancer
+> avec `uv sync --group test`, ou `uv sync --all-groups` pour tout
+> installer sans distinction de groupe.
+
+### Tester
+
+**Tests automatisés (pytest)**, sans réseau ni Mongo réel requis
+(doublures des trois services) :
+
+```bash
+cd backend
+uv run pytest tests/test_agent_graphe.py -v
+```
+
+**Contre un backend démarré** (Docker), avec `curl` — sous Windows,
+lancer depuis **WSL2** (`wsl`), pas PowerShell brut (l'alias
+`curl`→`Invoke-WebRequest` de PowerShell casse `-H`/`-d`) :
+
+```bash
+curl -X POST http://localhost:8081/api/v1/agent/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "id_session": "demo-1"}'
+```
+
+Alternative native PowerShell (sans `curl`) :
+
+```powershell
+$body = @{
+    fen        = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    id_session = "demo-1"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent/invoke" -Method Post -Body $body -ContentType "application/json"
+```
+
+Réponse attendue (position théorique — voir `evaluation: null`,
+`coups_theoriques` peuplé, `contexte_ouverture` peuplé par Milvus) :
+
+```json
+{
+  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "coups_theoriques": [
+    { "uci": "e2e4", "san": "e4", "nombre_parties": 1 }
+  ],
+  "evaluation": null,
+  "contexte_ouverture": [
+    {
+      "ouverture": "Variante Breyer",
+      "score": 0.4806,
+      "source_url": "https://fr.wikipedia.org/wiki/Variante_Breyer",
+      "texte": "..."
+    }
+  ]
+}
+```
+
+**Avec Insomnia** : méthode **POST**, body en **JSON** (pas "No
+Body").
+
+> ⚠️ **Point de vigilance** : en changeant une requête de GET vers
+> POST, Insomnia garde les anciens paramètres dans l'onglet
+> **Query**, à côté de Body. S'ils restent là, Insomnia envoie les
+> deux à la fois — la requête part avec `?fen=...&id_session=...`
+> dans l'URL et un body vide, et l'API répond `422 Field required`.
+> Vérifier l'onglet Query et cliquer **"Delete All"** avant de
+> renvoyer.
+
+### Persistance MongoDB
+
+L'état du graphe est persisté par `id_session` via
+[`langgraph-checkpoint-mongodb`](https://pypi.org/project/langgraph-checkpoint-mongodb/)
+(`MongoDBSaver`).
+
+```bash
+docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.countDocuments()"
+```
+
+Le compteur doit augmenter à chaque appel avec le même `id_session`.
+
+> ⚠️ **Point de vigilance non résolu** : `MONGO_URI` dans `.env`
+> pointe vers `/ffe_chess`, mais `MongoDBSaver` reçoit `db_name`
+> explicitement (`ffe_agent_checkpoints`, dans
+> `adaptateur_checkpointer_mongo.py`), ce qui **prend le pas** sur le
+> nom de base contenu dans l'URI. Les checkpoints atterrissent donc
+> bien dans `ffe_agent_checkpoints`, pas dans `ffe_chess` — décision
+> à trancher : base séparée pour les checkpoints (état actuel) ou
+> partagée avec `ffe_chess`.
+
+### Visualiser le graphe
+
+```bash
+cd backend
+uv run python scripts/visualiser_graphe.py
+```
+
+Génère `docs/images/graphe_agent.png` via l'utilitaire officiel
+LangGraph (`get_graph().draw_mermaid_png()`). Nécessite un accès
+sortant vers `mermaid.ink` ; en son absence, le script écrit en repli
+la source Mermaid (`.mermaid`) au même endroit.
+
+### Limite connue
+
+Le nœud RAG interroge Milvus avec le FEN brut, faute de résolution
+ECO/nom-d'ouverture à partir d'une position (voir commentaire dans
+`noeuds_agent.py::_construire_requete_contexte`).
+
+
 ## Structure du dépôt
 
 ```
@@ -296,23 +435,35 @@ pas une erreur.
 │   │   │   ├── healthcheck.py
 │   │   │   ├── moves.py       # GET /moves/{fen}
 │   │   │   ├── evaluate.py    # GET /evaluate/{fen}
+│   │   │   ├── explore.py     # GET /explore/{fen}  (theorie -> Stockfish)
+│   │   │   ├── vector_search.py # GET /vector-search  (RAG, Milvus)
+│   │   │   ├── agent.py       # POST /agent/invoke  (LangGraph)
 │   │   │   └── schemas.py
 │   │   ├── domaine/           # Modeles + ports (contrats), sans dependances
 │   │   │   ├── modeles.py
 │   │   │   └── ports/
 │   │   ├── application/       # Cas d'utilisation (orchestrent les ports)
+│   │   │   └── agent/          # StateGraph LangGraph
+│   │   │       ├── etat_agent.py    # EtatAgent (TypedDict)
+│   │   │       ├── noeuds_agent.py  # Noeuds = wrappers des cas d'utilisation
+│   │   │       └── graphe_agent.py  # Assemblage + compilation du graphe
 │   │   ├── infrastructure/    # Adaptateurs concrets (python-chess,
-│   │   │                       Lichess, Stockfish)
+│   │   │                       Lichess, Stockfish, Milvus,
+│   │   │                       MongoDBSaver pour le checkpointer)
 │   │   ├── core/              # Configuration + cablage des dependances
 │   │   └── main.py            # Point d'entree de l'application
 │   ├── tests/                 # Tests pytest (doublures des ports)
-│   ├── scripts/                # Script de verification manuelle des endpoints
+│   │   └── test_agent_graphe.py  # Graphe LangGraph, sans reseau ni Mongo
+│   ├── scripts/                # Verification manuelle + outils dev
+│   │   ├── test_endpoints.py     # Verification manuelle des endpoints
+│   │   └── visualiser_graphe.py  # Genere le schema du graphe (PNG/Mermaid)
+│   ├── docs/                   # Schemas generes (voir visualiser_graphe.py)
 │   ├── Dockerfile
 │   └── pyproject.toml
 ├── frontend/                 # Application Angular (à partir de l'étape 5)
 ├── docs/
 │   └── ARCHITECTURE.md       # Architecture cible + diagrammes PlantUML
-├── docker-compose.yml
+├── docker-compose.yml         # + service mongodb (persistance de l'agent)
 ├── .env.example
 └── README.md
 ```
