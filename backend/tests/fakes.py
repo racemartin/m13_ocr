@@ -7,7 +7,7 @@
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles
-    CoupTheorique, Evaluation, ExtraitConnaissance,
+    CoupTheorique, Evaluation, ExtraitConnaissance, VideoExplicative,
 )
 from   app.domaine.ports.port_validateur_echecs import (       # Ports
     PortValidateurEchecs,
@@ -20,6 +20,9 @@ from   app.domaine.ports.port_moteur_evaluation import (
 )
 from   app.domaine.ports.port_base_connaissances import (
     PortBaseConnaissances,
+)
+from   app.domaine.ports.port_recherche_videos import (
+    PortRechercheVideos,
 )
 
 
@@ -69,3 +72,15 @@ class FauxBaseConnaissances(PortBaseConnaissances):
         self, requete: str, top_k: int = 3,
     ) -> list[ExtraitConnaissance]:
         return self.extraits[:top_k]
+
+
+class FauxRechercheVideos(PortRechercheVideos):
+    """Simule l'API YouTube sans consommer de quota reel."""
+
+    def __init__(self, videos: list[VideoExplicative] | None = None) -> None:
+        self.videos = videos if videos is not None else []
+
+    def rechercher(
+        self, requete: str, max_resultats: int = 5,
+    ) -> list[VideoExplicative]:
+        return self.videos[:max_resultats]

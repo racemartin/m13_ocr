@@ -33,7 +33,29 @@ externes, choix techniques) est détaillée dans
 ```bash
 # Docker
 docker compose up --build
+
+docker compose up -d; docker compose logs -f backend
+
+ ✔ Network m13_ocr_default Created
+ ✔ Container ffe_etcd      Created
+ ✔ Container ffe_mongodb   Created
+ ✔ Container ffe_minio     Created
+ ✔ Container ffe_milvus    Created
+ ✔ Container ffe_backend   Created
+ ✔ Container ffe_frontend  Created
+
 docker compose down
+
+ ✔ Container ffe_frontend  Removed
+ ✔ Container ffe_backend   Removed
+ ✔ Container ffe_mongodb   Removed
+ ✔ Container ffe_milvus    Removed
+ ✔ Container ffe_etcd      Removed
+ ✔ Container ffe_minio     Removed
+ Ò✔ Network m13_ocr_default Removed
+
+docker compose build --no-cache backend
+docker compose up -d backend
 
 # Test API healthcheck
 curl http://localhost:8000/api/v1/healthcheck
@@ -60,6 +82,18 @@ http://192.168.1.146:9091/healthz
 uv run python scripts/ingestion/indexer_corpus.py
 uv run python scripts/ingestion/diagnostic_milvus.py
 curl http://localhost:8000/api/v1/vector-search?q=sicilienne
+
+# Test API Endpoints
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081
+
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test videos
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test evaluate
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test moves-invalide
+
+
+
+# Execution depuis Docker
+docker compose exec backend {comand}
 
 ```
 

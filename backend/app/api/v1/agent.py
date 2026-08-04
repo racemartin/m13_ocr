@@ -15,8 +15,10 @@ from   app.api.v1.schemas import (    # Schema HTTP
     CoupTheoriqueSchema, EvaluationSchema, ExtraitConnaissanceSchema,
 )
 from   app.core.dependances import obtenir_graphe_agent    # Injection
+from   app.tools.rafael.log_tool import LogTool    # Journalisation coloree
 
 routeur = APIRouter()
+log     = LogTool(origin="api.agent")
 
 
 class RequeteAgent(BaseModel):
@@ -50,13 +52,27 @@ def invoquer_agent(
     """
     configuration = {"configurable": {"thread_id": requete.id_session}}
 
+    log.START_ACTION(
+        "invoquer_agent", "POST /api/v1/agent/invoke",
+        f"Invocation du graphe (id_session={requete.id_session})",
+    )
+    log.PARAMETER_VALUE("fen", requete.fen)
+
     try:
         resultat = graphe.invoke(
             {"fen": requete.fen, "id_session": requete.id_session},
             config=configuration,
         )
     except ValueError as erreur:
+        log.LEVEL_6_NOTICE("invoquer_agent", f"FEN invalide : {erreur}")
         raise HTTPException(status_code=422, detail=str(erreur)) from erreur
+
+    log.FINISH_ACTION(
+        "invoquer_agent", "POST /api/v1/agent/invoke",
+        f"{len(resultat.get('coups_theoriques') or [])} coup(s) theorique(s), "
+        f"evaluation={'oui' if resultat.get('evaluation') else 'non'}, "
+        f"{len(resultat.get('contexte_ouverture') or [])} extrait(s) RAG",
+    )
 
     evaluation = resultat.get("evaluation")
 

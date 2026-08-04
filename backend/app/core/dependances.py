@@ -10,6 +10,9 @@ import os                       # Lecture des variables d'environnement
 from   pathlib import Path           # Construction robuste de chemins
 from   functools import lru_cache    # Instances singleton reutilisables
 
+# Bibliotheque tierce
+from   dotenv import load_dotenv    # Charge .env dans os.environ
+
 # Modules internes
 from   app.application.obtenir_coups_theoriques_service import (  # Cas
     ObtenirCoupsTheoriquesService,                                 # d'usage
@@ -43,6 +46,16 @@ from   app.infrastructure.adaptateur_checkpointer_mongo import (  # Check-
     construire_checkpointer_mongo,                                 # pointer
 )
 from   app.application.agent.graphe_agent import construire_graphe  # Agent
+from   app.infrastructure.adaptateur_youtube import AdaptateurYoutube  # API
+from   app.application.rechercher_videos_service import (              # Cas
+    RechercherVideosService,                                            # usage
+)
+
+# NOTE : necessaire pour que os.getenv(...) trouve les variables (MONGO_URI,
+# YOUTUBE_API_KEY, STOCKFISH_PATH...) en local (uv run ...), pas seulement
+# dans Docker (ou docker-compose injecte deja .env via "env_file:"). Place
+# apres les imports (et non avant) pour ne pas declencher E402 de ruff.
+load_dotenv()
 
 # Chemin par defaut du binaire Stockfish dans l'image Docker (Debian/apt)
 CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
@@ -100,6 +113,23 @@ def obtenir_adaptateur_stockfish() -> AdaptateurStockfish:
         CHEMIN_STOCKFISH_PAR_DEFAUT
     )
     return AdaptateurStockfish(chemin_binaire=chemin_binaire)
+
+
+@lru_cache
+def obtenir_adaptateur_youtube() -> AdaptateurYoutube:
+    cle_api = os.getenv("YOUTUBE_API_KEY")
+    if not cle_api:
+        raise RuntimeError(
+            "YOUTUBE_API_KEY absente : voir .env.example (Etape 4, "
+            "cle API YouTube Data v3 requise)."
+        )
+    return AdaptateurYoutube(cle_api=cle_api)
+
+
+def obtenir_service_videos() -> RechercherVideosService:
+    return RechercherVideosService(
+        recherche_videos=obtenir_adaptateur_youtube(),
+    )
 
 
 @lru_cache

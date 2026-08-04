@@ -49,3 +49,15 @@ class ExtraitConnaissance:
     ouverture  : str    # Nom de l'ouverture concernee
     source_url : str    # URL de la source d'origine (Wikipedia, Wikichess)
     score      : float  # Score de similarite (plus haut = plus pertinent)
+
+
+# ------------------------------------------------------------------------
+# Video explicative trouvee via l'API YouTube Data v3
+# ------------------------------------------------------------------------
+@dataclass(frozen=True)
+class VideoExplicative:
+    id_video  : str        # Identifiant YouTube, ex. "dQw4w9WgXcQ"
+    titre     : str        # Titre de la video
+    chaine    : str        # Nom de la chaine qui l'a publiee
+    url       : str        # URL complete, prete a afficher/ouvrir
+    vues      : int = 0    # Nombre de vues (signal de qualite, cf. filtre)

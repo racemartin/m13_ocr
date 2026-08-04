@@ -32,9 +32,10 @@ dependencies = [
     "pymilvus>=2.4.9",           # Client Python pour la base vectorielle Milvus
     "sentence-transformers>=3.2.1", # Génération des embeddings (Qwen3-Embedding-0.6B)
     "torch>=2.0,<3.0",           # Dependance de sentence-transformers -- explicite
-    # ici pour pouvoir la forcer en CPU-only si besoin (voir NOTE plus bas),
-    # sinon uv resout parfois la variante CUDA par defaut (plusieurs Go
-    # inutiles pour un POC qui tourne sur CPU).
+    # ici pour pouvoir la forcer en CPU-only (voir [tool.uv.sources] plus
+    # bas) -- le defaut PyPI resout la variante CUDA, plusieurs Go
+    # inutiles (et source de l'echec I/O sur WSL2/mnt/c) pour un POC qui
+    # tourne sur CPU.
     # --- Persistance ---
     "pymongo>=4.10.1",           # Client Python pour MongoDB (historique de sessions)
     "langgraph-checkpoint-mongodb>=0.1.0", # Checkpointer LangGraph sur Mongo
@@ -56,6 +57,8 @@ dev = [
     "jupyterlab>=4.5.2",          # Interface interactive pour prototyper l'agent
     "ipykernel>=7.1.0",           # Noyau Python pour l'exécution dans Jupyter
     "tox>=4.27.0",                # Exécution des tests dans des environnements isolés
+    # Outils de visualisation de l'agent
+    "langgraph-cli[inmem]>=0.4.0", # CLI + serveur local pour LangGraph Studio
 ]
 
 test = [
@@ -79,17 +82,18 @@ testpaths = ["tests"]
 managed = true
 package = true    # Paquet installable reel (voir [tool.hatch.build] ci-dessus)
 
-# NOTE optionnelle : pour forcer torch en version CPU-only (image Docker
-# bien plus legere -- le defaut PyPI inclut le support CUDA, inutile pour
-# un POC qui tourne sur CPU). Decommenter si l'espace disque/temps de
-# build devient un probleme, puis relancer `uv lock`.
-# [tool.uv.sources]
-# torch = [{ index = "pytorch-cpu" }]
-#
-# [[tool.uv.index]]
-# name = "pytorch-cpu"
-# url = "https://download.pytorch.org/whl/cpu"
-# explicit = true
+# PyTorch en CPU-only : evite de resoudre la variante CUDA par defaut de
+# PyPI (plusieurs Go, dont libtorch_cuda.so -- la cause exacte de l'echec
+# I/O rencontre en installant depuis WSL2 sur un chemin /mnt/c/...).
+# Active (non commente) car necessaire des maintenant pour installer
+# proprement sur ce poste.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["hatchling"]

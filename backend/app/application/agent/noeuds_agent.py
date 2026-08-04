@@ -137,5 +137,14 @@ def decider_apres_theorie(etat: EtatAgent) -> Literal["contexte", "evaluer"]:
     ExplorerPositionService (/explore/{fen})."""
 
     if etat.get("coups_theoriques"):
-        return "contexte"  # Theorie connue -> pas besoin de Stockfish
-    return "evaluer"       # Hors theorie -> evaluation moteur necessaire
+        log.LEVEL_6_NOTICE(
+            "decider_apres_theorie",
+            "Arete -> contexte (theorie connue, Stockfish non necessaire)",
+        )
+        return "contexte"
+
+    log.LEVEL_6_NOTICE(
+        "decider_apres_theorie",
+        "Arete -> evaluer (hors theorie, evaluation moteur necessaire)",
+    )
+    return "evaluer"
