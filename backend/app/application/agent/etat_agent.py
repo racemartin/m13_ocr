@@ -9,13 +9,22 @@
 # LangGraph (serde ormsgpack, gere nativement les dataclasses). Aucune
 # conversion manuelle en dict n'est donc necessaire ici ; la conversion
 # vers un schema HTTP reste, elle, la responsabilite de app/api/v1/schemas.py.
+#
+# NOTE (version) : pyproject.toml fixe langgraph>=1.2.10 explicitement.
+# Une version plus ancienne (observee : la resolution par defaut de
+# "langgraph>=0.2.45") a montre un bug reproductible ou la mise a jour
+# d'etat d'un noeud n'est pas vue par l'arete conditionnelle suivante ni
+# par le resultat final -- confirme par un script de repro minimal,
+# independant du reste du projet. Ne pas assouplir cette borne sans
+# retester ce scenario precis (decision -> arete conditionnelle -> cle
+# absente du resultat).
 
 # Bibliotheque standard
 from   typing import TypedDict    # Structure typee pour l'etat du graphe
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles du domaine
-    CoupTheorique, Evaluation, ExtraitConnaissance,
+    CoupTheorique, Evaluation, ExtraitConnaissance, VideoExplicative,
 )
 
 
@@ -29,6 +38,11 @@ class EtatAgent(TypedDict, total=False):
 
     fen                : str                        # Position a analyser
     id_session         : str                        # thread_id (Mongo)
-    coups_theoriques   : list[CoupTheorique]         # Cf. /moves
-    evaluation         : Evaluation                  # Cf. /evaluate
-    contexte_ouverture : list[ExtraitConnaissance]    # Cf. /vector-search
+    coups_theoriques   : list[CoupTheorique]        # Cf. /moves
+    evaluation         : Evaluation                 # Cf. /evaluate
+    contexte_ouverture : list[ExtraitConnaissance]  # Cf. /vector-search
+                                                    # -------------------------
+    rechercher_video   : bool                       # Decision du LLM
+    requete_video      : str                        # Requete choisie par le LLM
+    videos             : list[VideoExplicative]     # Resultat, si recherche faite
+    explication        : str                        # Synthese pedagogique (LLM)

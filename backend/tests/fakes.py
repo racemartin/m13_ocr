@@ -84,3 +84,44 @@ class FauxRechercheVideos(PortRechercheVideos):
         self, requete: str, max_resultats: int = 5,
     ) -> list[VideoExplicative]:
         return self.videos[:max_resultats]
+
+
+class FauxModeleDecision:
+    """Simule ChatAnthropic sans appel reseau ni cle API, pour les DEUX
+    usages reels du modele dans le graphe :
+      - with_structured_output(...).invoke(...) -> decision structuree
+      - invoke(...) direct                       -> texte libre (.content)
+    """
+
+    def __init__(
+        self, decision=None, texte_genere: str = "Explication de test.",
+    ) -> None:
+        from app.application.agent.noeuds_agent_llm import DecisionVideo
+        self.decision = decision or DecisionVideo(
+            rechercher_video=True, requete_video="Sicilienne",
+        )
+        self.texte_genere = texte_genere
+
+    def with_structured_output(self, schema):
+        return _FauxSortieStructuree(self.decision)
+
+    def invoke(self, prompt: str):
+        return _FauxMessageIA(self.texte_genere)
+
+
+class _FauxSortieStructuree:
+    """Retour de with_structured_output(...) : renvoie l'objet Pydantic
+    directement, comme le fait le vrai ChatAnthropic."""
+
+    def __init__(self, decision) -> None:
+        self.decision = decision
+
+    def invoke(self, prompt: str):
+        return self.decision
+
+
+class _FauxMessageIA:
+    """Imite AIMessage : seul `.content` est utilise par nos noeuds."""
+
+    def __init__(self, content: str) -> None:
+        self.content = content

@@ -2,104 +2,69 @@
 
 ## Objectif
 
-POC (Proof of Concept), développé en 2 semaines pour la Fédération
-Française des Échecs (FFE), d'un agent intelligent qui accompagne les
-jeunes espoirs dans l'apprentissage des **ouvertures d'échecs** :
-coups théoriques (Lichess), évaluation de position (Stockfish),
-contexte sur l'ouverture (RAG Wikichess via Milvus) et vidéos
-explicatives (YouTube), le tout via un échiquier interactif Angular.
+POC (Proof of Concept), développé pour la Fédération Française des
+Échecs (FFE), d'un agent intelligent qui accompagne les jeunes espoirs
+dans l'apprentissage des **ouvertures d'échecs** : coups théoriques
+(Lichess), évaluation de position (Stockfish), contexte pédagogique sur
+l'ouverture (RAG Wikichess/Wikipédia via Milvus), vidéos explicatives
+(YouTube) et, dans sa variante avancée, une décision et une synthèse en
+langage naturel confiées à un LLM (Claude) — le tout via un échiquier
+interactif Angular.
 
 L'architecture cible complète (composants, services Docker, services
 externes, choix techniques) est détaillée dans
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
+---
+
+## Table des matières
+
+- [Stack technique](#stack-technique)
+- [Architecture (vue Docker)](#architecture-vue-docker)
+- [Prérequis](#prérequis)
+- [Démarrage rapide](#démarrage-rapide)
+- **Étapes du projet**, chacune avec *ce qui s'installe*, *ce qui
+  s'implémente* et *comment le tester* :
+  - [Étape 1 — Environnement de développement](#étape-1-environnement-de-développement)
+  - [Étape 2 — Agent de base : théorie et moteur](#étape-2-agent-de-base-théorie-et-moteur)
+  - [Étape 3 — RAG (Milvus)](#étape-3-rag-milvus)
+  - [Agent LangGraph — version de base, sans LLM](#agent-langgraph-version-de-base-sans-llm)
+  - [Étape 4 — Vidéos explicatives (YouTube)](#étape-4-vidéos-explicatives-youtube)
+  - [Agent LangGraph — variante LLM (décision + synthèse)](#agent-langgraph-variante-llm-décision-synthèse)
+  - [LangGraph Studio](#langgraph-studio)
+  - [Étape 5 — Interface Angular](#étape-5-interface-angular-à-venir)
+  - [Étape 6 — Containerisation complète](#étape-6-containerisation-complète-à-venir)
+  - [Étape 7 — Étude de faisabilité MCP](#étape-7-étude-de-faisabilité-mcp-à-venir)
+- [Key Commands (aide-mémoire complet)](#key-commands-aide-mémoire-complet)
+- [Structure du dépôt](#structure-du-dépôt)
+- [Avancement de la mission](#avancement-de-la-mission)
+- [Points de vigilance](#points-de-vigilance)
+- [Auteur](#auteur) / [Licence](#licence)
+
+---
 
 ## Stack technique
 
 | Couche | Technologie |
 |---|---|
-| Frontend | Angular + `ngx-chessboard` |
+| Frontend | Angular + `ngx-chessboard` *(à venir, étape 5)* |
 | Backend | FastAPI + LangGraph |
 | Règles du jeu / validation FEN | `python-chess` |
 | Moteur d'évaluation | Stockfish (binaire natif + wrapper Python `stockfish`) |
-| Théorie des ouvertures | API Lichess (Opening Explorer) |
-| Base vectorielle | Milvus |
-| Persistance | MongoDB |
+| Théorie des ouvertures | API Lichess (Opening Explorer), repli local Polyglot |
+| RAG / contexte pédagogique | Milvus + `sentence-transformers` |
+| Vidéos explicatives | API YouTube Data v3 (`google-api-python-client`) |
+| Décision et synthèse LLM | Anthropic Claude (`langchain-anthropic`) |
+| Persistance | MongoDB (checkpoints de session LangGraph) |
 | Gestionnaire de paquets Python | `uv` |
 | Orchestration | Docker Compose |
+| Observabilité (dev) | LangGraph Studio (`langgraph-cli`) |
 
-## Key Commands
-
-```bash
-# Docker
-docker compose up --build
-
-docker compose up -d; docker compose logs -f backend
-
- ✔ Network m13_ocr_default Created
- ✔ Container ffe_etcd      Created
- ✔ Container ffe_mongodb   Created
- ✔ Container ffe_minio     Created
- ✔ Container ffe_milvus    Created
- ✔ Container ffe_backend   Created
- ✔ Container ffe_frontend  Created
-
-docker compose down
-
- ✔ Container ffe_frontend  Removed
- ✔ Container ffe_backend   Removed
- ✔ Container ffe_mongodb   Removed
- ✔ Container ffe_milvus    Removed
- ✔ Container ffe_etcd      Removed
- ✔ Container ffe_minio     Removed
- Ò✔ Network m13_ocr_default Removed
-
-docker compose build --no-cache backend
-docker compose up -d backend
-
-# Test API healthcheck
-curl http://localhost:8000/api/v1/healthcheck
-http://192.168.1.146:8000/docs
-
-# Test ANGULAR App  (Verify API healthcheck)
-curl http://192.168.1.146:8081/api/v1/healthcheck
-
-# Ingestion
-$env:MILVUS_HOST="localhost"
-uv run python scripts/ingestion/drop_collection.py
-
-uv run python scripts/ingestion/fetch_wikichess.py
-uv run python scripts/ingestion/fetch_wikipedia.py
-uv run python scripts/ingestion/build_corpus.py
-
-# Test MILVUS
-Invoke-WebRequest -Uri http://localhost:9091/healthz -UseBasicParsing
-
-# Test MINIO
-http://192.168.1.146:9091/healthz
-
-# Test API vector-search
-uv run python scripts/ingestion/indexer_corpus.py
-uv run python scripts/ingestion/diagnostic_milvus.py
-curl http://localhost:8000/api/v1/vector-search?q=sicilienne
-
-# Test API Endpoints
-uv run python scripts/test_endpoints.py --base-url http://localhost:8081
-
-uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test videos
-uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test evaluate
-uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test moves-invalide
-
-
-
-# Execution depuis Docker
-docker compose exec backend {comand}
-
-```
+---
 
 ## Architecture (vue Docker)
 
-```bash
+```
 +-----------------------------------------------------------------------+
 | Poste de developpement (Docker Compose)                               |
 |                                          port 8081                    |
@@ -119,7 +84,10 @@ docker compose exec backend {comand}
 |                    | Conteneur backend   |-----> | Lichess API |      |
 |                    | FastAPI + Uvicorn   |       +-------------+      |
 |                    | + Agent LangGraph   | HTTPS +------------------+ |
-|                    |                     |-----> | YouTube Data API | |
+|                    | (base + variante    |-----> | YouTube Data API | |
+|                    |  LLM)               |       +------------------+ |
+|                    |                     | HTTPS +------------------+ |
+|                    |                     |-----> | API Anthropic    | |
 |                    +---------------------+       +------------------+ |
 |                    | port 19530         | port 27017                  |
 |                    v                    v                             |
@@ -136,26 +104,45 @@ docker compose exec backend {comand}
 +-----------------------------------------------------------------------+
 ```
 
+---
+
 ## Prérequis
 
 - Git
 - Docker et Docker Compose installés sur le poste
+- Clé API YouTube Data v3 valide (voir [Étape 4](#étape-4-vidéos-explicatives-youtube))
+- Clé API Anthropic valide, avec un moyen de paiement configuré sur
+  [platform.claude.com](https://platform.claude.com) (voir
+  [variante LLM](#agent-langgraph-variante-llm-décision-synthèse))
 - (à partir de l'étape 5) Node.js et Angular CLI
 
+---
 
+## Démarrage rapide
 
-## Installation et démarrage
+C'est la base indispensable avant toute autre étape — sans Docker
+levé, rien d'autre ne peut être testé.
 
 ```bash
 # 1. Cloner le dépôt
 git clone <url-du-depot>
-cd ffe-chess-agent
+cd m13_ocr
 
 # 2. Créer le fichier d'environnement local
 cp .env.example .env
+# Puis renseigner : YOUTUBE_API_KEY, ANTHROPIC_API_KEY (voir Prérequis)
 
-# 3. Lancer les services
-docker compose up --build
+# 3. Lancer tous les services (build complet)
+docker compose up -d --build
+
+# 4. Suivre les logs du backend (Ctrl+C pour arreter le suivi, sans stopper les conteneurs)
+docker compose logs -f backend
+```
+
+Vérifier que tous les services sont sains :
+
+```bash
+docker compose ps
 ```
 
 Vérifier que le backend répond :
@@ -173,60 +160,108 @@ Réponse attendue :
 Depuis un autre poste du réseau local (remplacer par l'IP de la
 machine hôte) :
 
- A travers du frontend avec la App Angular (port 8081):
 ```
-http://192.168.1.146:8081/api/v1/healthcheck
-```
-
-Directement au backend dans la API (port 8000):
-```
-http://192.168.1.146:8000/docs
+http://192.168.1.146:8081/api/v1/healthcheck   # via le frontend (port 8081)
+http://192.168.1.146:8000/docs                  # directement sur l'API (port 8000)
 ```
 
+> ⚠️ **Le premier build est long** (≈ 30-40 min, PyTorch notamment) et
+> les premières requêtes vers `/vector-search`, `/agent/invoke` et
+> `/agent-llm/invoke` déclenchent le téléchargement à froid du modèle
+> d'embeddings depuis Hugging Face (`Warning: unauthenticated requests
+> to the HF Hub` dans les logs — normal, pas une erreur). Patienter
+> avant de conclure à un blocage.
 
-## Tester les endpoints de l'étape 2
+---
 
-Deux nouveaux endpoints exposent la logique de l'agent :
+## Étape 1 — Environnement de développement
 
-- `GET /api/v1/moves/{fen}` — coups théoriques connus par Lichess
-- `GET /api/v1/evaluate/{fen}` — évaluation Stockfish (centipawns / mat)
+**S'installe** : Git, Docker Desktop, structure `backend/`/`frontend/`.
 
-**Tests automatisés (pytest)**, sans appel réseau ni binaire
-Stockfish nécessaire (adaptateurs remplacés par des doublures de
-test) :
+**S'implémente** : `docker-compose.yml` de base, `Dockerfile` du
+backend, endpoint `GET /api/v1/healthcheck`.
 
+**Se teste** :
+```bash
+docker compose up -d --build
+curl http://localhost:8000/api/v1/healthcheck
+```
+
+---
+
+## Étape 2 — Agent de base : théorie et moteur
+
+**S'installe** : `python-chess`, `stockfish` (binaire + wrapper Python),
+`httpx`.
+
+**S'implémente** :
+- `GET /api/v1/moves/{fen}` — coups théoriques (Lichess, avec repli
+  Polyglot local si Lichess est indisponible)
+- `GET /api/v1/evaluate/{fen}` — évaluation Stockfish (centipawns/mat,
+  coup recommandé, profondeur)
+- `GET /api/v1/explore/{fen}` — théorie si trouvée, sinon Stockfish
+  (bifurcation codée à la main, base du futur graphe LangGraph)
+
+**Se teste** :
 ```bash
 cd backend
 uv sync --group test
 uv run pytest -v
-```
 
-**Script de vérification manuelle**, à lancer contre un backend déjà
-démarré (Docker ou local) :
-
-```bash
-cd backend
+# Verification manuelle contre un backend demarre
 uv run python scripts/test_endpoints.py --base-url http://localhost:8000
-uv run python scripts/test_endpoints.py --base-url http://localhost:8081
 ```
-
-Détails complets (structure des tests, doublures, options du script)
-dans [`backend/README.md`](backend/README.md).
 
 > ⚠️ **Point de vigilance connu** : le service public
-> `explorer.lichess.ovh` (Opening Explorer) traverse une panne
-> d'infrastructure côté Lichess depuis fin février 2026. Tant qu'elle
-> dure, `/moves/{fen}` répond `200` avec une liste vide au lieu des
-> coups théoriques réels — c'est le comportement de dégradation
-> gracieuse voulu (voir `AdaptateurLichess`), pas un bug côté agent.
-> `/evaluate/{fen}` n'est pas concerné (ne dépend que de Stockfish,
-> exécuté localement dans le conteneur).
+> `explorer.lichess.ovh` peut traverser des pannes d'infrastructure.
+> Tant que dure une panne, `/moves/{fen}` répond `200` avec le repli
+> Polyglot (ou liste vide si la ligne n'est pas couverte) au lieu des
+> coups Lichess réels — dégradation gracieuse voulue, pas un bug.
+> `/evaluate/{fen}` n'est pas concerné (Stockfish tourne localement).
 
+### Résilience de `/moves/{fen}` : repli local Polyglot
 
+1. Tente d'abord l'**API Lichess** (Opening Explorer).
+2. Si elle échoue ou renvoie une liste vide, retombe sur un **livre
+   Polyglot local** (`data/polyglot/livre_ouvertures.bin`), sans appel
+   réseau.
 
-## Étape 3 — Pipeline d'ingestion RAG
+```json
+[
+  {"uci": "e2e4", "san": "e4", "nombre_parties": 1},
+  {"uci": "d2d4", "san": "d4", "nombre_parties": 1}
+]
+```
 
-Pour construire le corpus vectorisable (`data/corpus/*.md`), un pipeline en 3 scripts, chacun source-consciente sauf le dernier :
+> ⚠️ Pour les entrées venant du livre Polyglot, `nombre_parties` est en
+> réalité le *poids* (`weight`) du livre, réutilisé par simplicité dans
+> le même champ que Lichess.
+
+### Réponse enrichie de `/evaluate/{fen}`
+
+```json
+{
+  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "evaluation": { "type": "cp", "valeur": 39, "score": "+0.39" },
+  "coup_recommande": "e2e4",
+  "profondeur": 15
+}
+```
+
+> ⚠️ **Décision en attente** : champs nommés en français
+> (`valeur`, `coup_recommande`, `profondeur`). Si un client externe
+> attend des noms anglais, changement isolé à `app/api/v1/schemas.py`.
+
+---
+
+## Étape 3 — RAG (Milvus)
+
+**S'installe** : `pymilvus`, `sentence-transformers`, `beautifulsoup4`.
+
+**S'implémente** :
+- Pipeline d'ingestion : `fetch_wikichess.py` + `fetch_wikipedia.py` →
+  `build_corpus.py` → `indexer_corpus.py`
+- `GET /api/v1/vector-search?q=...` — recherche vectorielle de contexte
 
 ```
 data/seeds/*.csv (curés à la main)
@@ -243,88 +278,63 @@ data/raw/wikichess/*.json               data/raw/wikipedia/*.json
                             |
                             v
                    data/corpus/*.md
+                            |
+                            v
+             scripts/ingestion/indexer_corpus.py  (-> Milvus)
 ```
 
-### Exécution
-
+**Se teste** :
 ```bash
 cd backend
+
+# Ingestion (une seule fois, ou apres mise a jour des seeds)
 python scripts/ingestion/fetch_wikichess.py
 python scripts/ingestion/fetch_wikipedia.py
 python scripts/ingestion/build_corpus.py
-```
 
-### Indexation et vérification
-
-Une fois le corpus généré (`data/corpus/*.md`), indexe-le dans Milvus puis vérifie :
-
-```bash
+# Indexation dans Milvus (hors Docker : forcer localhost)
+$env:MILVUS_HOST="localhost"          # PowerShell
 uv run python scripts/ingestion/indexer_corpus.py
 uv run python scripts/ingestion/diagnostic_milvus.py
-```
 
-> ⚠️ **Point d'attention** : ces scripts, lancés depuis la machine hôte
-> (pas depuis un conteneur), doivent utiliser `MILVUS_HOST=localhost`
-> (le service Docker n'est résolu par son nom `milvus-standalone` que
-> *depuis l'intérieur* du réseau Docker) :
-> ```powershell
-> $env:MILVUS_HOST="localhost"
-> uv run python scripts/ingestion/indexer_corpus.py
-> ```
-> Le backend, lui, tourne dans le réseau Docker et résout
-> `milvus-standalone` sans configuration supplémentaire.
-
-> ⚠️ **`data/raw/` et `data/corpus/` sont dans `.gitignore`** — ce sont
-> des artefacts régénérables (JSON bruts, HTML de debug, corpus
-> normalisé), pas du code source. Seul `data/seeds/*.csv` (les listes
-> curées à la main) est versionné.
-
-### Schéma commun des données brutes
-
-Les deux scripts de fetch écrivent un JSON par article, avec exactement les mêmes clés (`modele_brut.DonneeBrute`) :
-```json
-{
-  "source": "wikichess" | "wikipedia",
-  "nom": "...", "categorie": "...", "url": "...", "langue": "en" | "fr",
-  "extrait": "...", "metadonnees": {}, "recupere_le": "..."
-}
-```
-
-### Points de vigilance découverts en conditions réelles
-
-- **API Wikimedia** : exige un `User-Agent` descriptif (nom du projet + contact) — sans lui, `403 Forbidden` systématique. Confirmé empiriquement : 165/165 échecs sans ce header, résolu en l'ajoutant.
-- **Wikichess** : le contenu narratif n'est pas repéré par un motif de texte global, mais par l'élément DOM `<div align="justify">` — il en existe plusieurs par page (menu, footer...), donc seul celui contenant le séparateur `====` est retenu. Selon les pages, la prose se trouve avant `====`, après la ligne `Contributors :`, les deux, ou aucune (page purement statistique, cas normal — pas un bug).
-- Chaque page Wikichess en échec sauvegarde son HTML brut dans `data/raw/_debug/` pour inspection, sans bloquer le traitement des autres.
-- Traçabilité complète via LogTool (mêmes conventions que le reste du backend) : chaque script journalise ses paramètres, le détail de la première entrée traitée (utile pour diagnostiquer sans script séparé), et le compte final réussies/échouées.
-
-
-## Tester l'endpoint de l'étape 3 (RAG)
-
-```bash
+# Endpoint
 curl "http://localhost:8000/api/v1/vector-search?q=sicilienne&top_k=3"
 ```
 
-Réponse attendue (`200`) :
+Réponse attendue (`200`, liste vide = réponse valide, pas une erreur) :
 ```json
-[
-  {
-    "texte": "...",
-    "ouverture": "Défense sicilienne",
-    "source_url": "https://fr.wikipedia.org/wiki/...",
-    "score": 0.87
-  }
-]
+[{"texte": "...", "ouverture": "Défense sicilienne",
+  "source_url": "https://fr.wikipedia.org/wiki/...", "score": 0.87}]
 ```
 
-Une liste vide est une réponse valide (aucun contexte pertinent trouvé),
-pas une erreur.
+> ⚠️ **`MILVUS_HOST`** : `localhost` pour un script lancé depuis
+> l'hôte, `milvus-standalone` pour le backend dans le réseau Docker
+> (déjà configuré, ne pas mettre `MILVUS_HOST=localhost` dans le `.env`
+> partagé — casserait le backend en conteneur).
+>
+> **`data/raw/` et `data/corpus/` sont dans `.gitignore`** — artefacts
+> régénérables. Seul `data/seeds/*.csv` est versionné.
 
+### Points de vigilance découverts en conditions réelles
 
-## Agent LangGraph — orchestration et persistance (MongoDB)
+- **API Wikimedia** : exige un `User-Agent` descriptif — sans lui,
+  `403 Forbidden` systématique.
+- **Wikichess** : contenu repéré via `<div align="justify">` contenant
+  le séparateur `====`, pas un motif de texte global.
+- Chaque échec Wikichess sauvegarde son HTML brut dans
+  `data/raw/_debug/`, sans bloquer le reste du traitement.
+- Traçabilité complète via `LogTool` (paramètres, première entrée,
+  compte final réussies/échouées).
 
-L'agent complet est exposé par `POST /api/v1/agent/invoke`, qui
-orchestre via un `StateGraph` LangGraph les services déjà construits
-aux étapes 2 et 3, sans dupliquer leur logique :
+---
+
+## Agent LangGraph — version de base, sans LLM
+
+**S'installe** : `langgraph`, `langgraph-checkpoint-mongodb`, `pymongo`.
+
+**S'implémente** : `POST /api/v1/agent/invoke` — orchestre via un
+`StateGraph` LangGraph les services des étapes 2 et 3, sans LLM,
+100 % déterministe :
 
 ```
         rechercher_theorie
@@ -338,284 +348,453 @@ aux étapes 2 et 3, sans dupliquer leur logique :
 
 ![Graphe de l'agent LangGraph](backend/docs/images/graphe_agent.png)
 
-*Schéma généré automatiquement depuis le code réel — voir
-[Visualiser le graphe](#visualiser-le-graphe) plus bas pour le
-régénérer après toute modification de `graphe_agent.py`.*
-
-### Installation
-
+**Se teste** :
 ```bash
 cd backend
-uv sync --group test
-```
+uv run pytest tests/test_agent_graphe.py -v   # 3 tests, doublures, sans reseau
 
-> ⚠️ **Point de vigilance** : `uv sync` (sans argument) n'installe
-> pas le groupe `test` (pytest, coverage, etc.) selon la version de
-> `uv`. Si `pytest` répond `ModuleNotFoundError` alors que le reste
-> du projet fonctionne, c'est la cause la plus probable — relancer
-> avec `uv sync --group test`, ou `uv sync --all-groups` pour tout
-> installer sans distinction de groupe.
-
-### Tester
-
-**Tests automatisés (pytest)**, sans réseau ni Mongo réel requis
-(doublures des trois services) :
-
-```bash
-cd backend
-uv run pytest tests/test_agent_graphe.py -v
-```
-
-**Contre un backend démarré** (Docker), avec `curl` — sous Windows,
-lancer depuis **WSL2** (`wsl`), pas PowerShell brut (l'alias
-`curl`→`Invoke-WebRequest` de PowerShell casse `-H`/`-d`) :
-
-```bash
-curl -X POST http://localhost:8081/api/v1/agent/invoke \
-  -H "Content-Type: application/json" \
-  -d '{"fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "id_session": "demo-1"}'
-```
-
-Alternative native PowerShell (sans `curl`) :
-
-```powershell
+# Contre un backend demarre (PowerShell, sans curl)
 $body = @{
     fen        = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     id_session = "demo-1"
 } | ConvertTo-Json
-
 Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent/invoke" -Method Post -Body $body -ContentType "application/json"
 ```
 
-Réponse attendue (position théorique — voir `evaluation: null`,
-`coups_theoriques` peuplé, `contexte_ouverture` peuplé par Milvus) :
-
+Réponse attendue (`evaluation: null` si théorie trouvée) :
 ```json
 {
-  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  "coups_theoriques": [
-    { "uci": "e2e4", "san": "e4", "nombre_parties": 1 }
-  ],
+  "fen": "...",
+  "coups_theoriques": [{"uci": "e2e4", "san": "e4", "nombre_parties": 1}],
   "evaluation": null,
-  "contexte_ouverture": [
-    {
-      "ouverture": "Variante Breyer",
-      "score": 0.4806,
-      "source_url": "https://fr.wikipedia.org/wiki/Variante_Breyer",
-      "texte": "..."
-    }
-  ]
+  "contexte_ouverture": [{"ouverture": "Variante Breyer", "score": 0.48, "source_url": "...", "texte": "..."}]
 }
 ```
 
-**Avec Insomnia** : méthode **POST**, body en **JSON** (pas "No
-Body").
-
-> ⚠️ **Point de vigilance** : en changeant une requête de GET vers
-> POST, Insomnia garde les anciens paramètres dans l'onglet
-> **Query**, à côté de Body. S'ils restent là, Insomnia envoie les
-> deux à la fois — la requête part avec `?fen=...&id_session=...`
-> dans l'URL et un body vide, et l'API répond `422 Field required`.
-> Vérifier l'onglet Query et cliquer **"Delete All"** avant de
-> renvoyer.
-
 ### Persistance MongoDB
-
-L'état du graphe est persisté par `id_session` via
-[`langgraph-checkpoint-mongodb`](https://pypi.org/project/langgraph-checkpoint-mongodb/)
-(`MongoDBSaver`).
 
 ```bash
 docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.countDocuments()"
 ```
+Le compteur augmente à chaque appel avec le même `id_session`.
 
-Le compteur doit augmenter à chaque appel avec le même `id_session`.
-
-> ⚠️ **Point de vigilance non résolu** : `MONGO_URI` dans `.env`
-> pointe vers `/ffe_chess`, mais `MongoDBSaver` reçoit `db_name`
-> explicitement (`ffe_agent_checkpoints`, dans
-> `adaptateur_checkpointer_mongo.py`), ce qui **prend le pas** sur le
-> nom de base contenu dans l'URI. Les checkpoints atterrissent donc
-> bien dans `ffe_agent_checkpoints`, pas dans `ffe_chess` — décision
-> à trancher : base séparée pour les checkpoints (état actuel) ou
+> ⚠️ **Point de vigilance non résolu** : `MONGO_URI` peut pointer vers
+> `/ffe_chess` dans `.env`, mais `MongoDBSaver` reçoit `db_name`
+> explicitement (`ffe_agent_checkpoints`), qui **prend le pas** sur le
+> nom de l'URI. Décision à trancher : base séparée (état actuel) ou
 > partagée avec `ffe_chess`.
 
 ### Visualiser le graphe
 
 ```bash
-cd backend
 uv run python scripts/visualiser_graphe.py
 ```
+Génère `docs/images/graphe_agent.png` (repli en `.mermaid` sans accès
+à `mermaid.ink`).
 
-Génère `docs/images/graphe_agent.png` via l'utilitaire officiel
-LangGraph (`get_graph().draw_mermaid_png()`). Nécessite un accès
-sortant vers `mermaid.ink` ; en son absence, le script écrit en repli
-la source Mermaid (`.mermaid`) au même endroit.
+---
 
-### Limite connue
+## Étape 4 — Vidéos explicatives (YouTube)
 
-Le nœud RAG interroge Milvus avec le FEN brut, faute de résolution
-ECO/nom-d'ouverture à partir d'une position (voir commentaire dans
-`noeuds_agent.py::_construire_requete_contexte`).
+**S'installe** : `google-api-python-client`.
 
+**S'implémente** (architecture hexagonale complète, indépendante du
+graphe) :
+- `PortRechercheVideos` (domaine) → `AdaptateurYoutube` (infrastructure)
+- `RechercherVideosService` (application) — requête intelligente
+  (`"{ouverture} chess opening tutorial explanation"`)
+- `GET /api/v1/videos/{ouverture}`
+- **Filtre qualité** : durée (2-40 min, écarte Shorts et cours de
+  plusieurs heures) + vues minimum, via un second appel
+  `videos().list()` peu coûteux en quota
+- Gestion des erreurs de quota (`HttpError`) et de réseau
+  (SSL/proxy/DNS) — dégrade toujours vers une liste vide, jamais de 500
+
+**Se teste**, en 3 niveaux indépendants :
+```bash
+cd backend
+
+# 1. Smoke-test isole (ni le projet, ni l'adaptateur)
+uv run python scripts/test_youtube_smoke.py "Sicilian defense chess opening"
+
+# 2. A travers l'adaptateur reel (real API, hors architecture DI)
+uv run python scripts/test_youtube_adapter.py --ouverture "Ruy Lopez"
+
+# 3. Tests automatises (doublure FauxRechercheVideos, sans reseau)
+uv run pytest tests/test_videos.py -v
+
+# 4. Endpoint complet (backend demarre)
+curl http://localhost:8000/api/v1/videos/Sicilienne
+```
+
+> ⚠️ Nécessite `YOUTUBE_API_KEY` dans `.env` (voir [Prérequis](#prérequis)).
+> `load_dotenv()` charge automatiquement le `.env` local **uniquement**
+> pour ce qui passe par `app.core.dependances` (l'app FastAPI, `pytest`).
+> Les scripts autonomes (`test_youtube_smoke.py`,
+> `test_youtube_adapter.py`) chargent `.env` eux-mêmes.
+
+---
+
+## Agent LangGraph — variante LLM (décision + synthèse)
+
+**S'installe** : `langchain-anthropic` (déjà présent depuis le début
+du projet, jamais invoqué avant cette étape).
+
+**S'implémente**, dans des fichiers **séparés** de la version de base
+(`*_llm.py` partout — aucune régression possible sur
+`POST /api/v1/agent/invoke`, qui reste inchangé) :
+
+```
+        rechercher_theorie
+              |
+        theorie trouvee ? ---- oui ---> rechercher_contexte
+              |                                |
+             non                       decider_video (LLM)
+              |                                |
+        evaluer_position                video utile ? -oui-> rechercher_videos
+              |                                |                    |
+              `-----> rechercher_contexte      `-non--> generer_reponse (LLM) <-'
+                                                               |
+                                                              FIN
+```
+
+![Graphe de l'agent LangGraph, variante LLM](backend/docs/images/graphe_agent_llm.png)
+
+- **`decider_video`** — le LLM décide, avec sortie structurée
+  (Pydantic, pas de texte à parser), s'il vaut la peine de chercher une
+  vidéo et avec quel terme (nom réel de l'ouverture, pas le FEN brut)
+- **`generer_reponse`** — synthèse pédagogique en 2-4 phrases pour un
+  jeune joueur
+- `POST /api/v1/agent-llm/invoke` — même contrat d'entrée que
+  `/agent/invoke`, réponse enrichie de `videos` et `explication`
+- **Dégradation gracieuse** : si l'appel LLM échoue (clé absente,
+  quota, réseau), repli sur une heuristique simple — ne bloque jamais
+  la réponse HTTP
+
+**Se teste** :
+```bash
+cd backend
+uv run pytest tests/test_agent_graphe_llm.py -v   # 4 tests, doublures, sans reseau/cle
+
+$body = @{
+    fen        = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    id_session = "demo-llm-1"
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent-llm/invoke" -Method Post -Body $body -ContentType "application/json"
+```
+
+Réponse attendue, en plus des champs de `/agent/invoke` :
+```json
+{
+  "videos": [{"id_video": "...", "titre": "...", "chaine": "...", "url": "...", "vues": 890000}],
+  "explication": "La Sicilienne est une réponse ambitieuse à 1.e4, offrant..."
+}
+```
+
+> ⚠️ Nécessite `ANTHROPIC_API_KEY` dans `.env`, obtenue sur
+> [platform.claude.com](https://platform.claude.com) (**pas**
+> `claude.ai`, qui est l'interface de chat, sans clés API) — moyen de
+> paiement requis, facturation à l'usage. Modèle par défaut :
+> `claude-haiku-4-5-20251001`, changeable via `ANTHROPIC_MODEL` dans
+> `.env`, sans toucher au code.
+
+> ⚠️ **Piège rencontré en conditions réelles, à connaître** :
+> `EtatAgent` (`app/application/agent/etat_agent.py`) est un
+> `TypedDict`. LangGraph ignore **silencieusement** toute clé renvoyée
+> par un nœud si elle n'y est pas déclarée — aucune erreur, la valeur
+> disparaît simplement du résultat final. Tout nouveau champ ajouté par
+> un nœud doit être déclaré dans `EtatAgent` **avant** d'écrire le
+> nœud, jamais après.
+
+### Vérification croisée des fichiers du volet LLM
+
+Avant `pytest`/Docker, si un fichier a pu rester à une version
+intermédiaire :
+```bash
+uv run python scripts/verificar_archivos_llm.py
+```
+
+### Visualiser le graphe LLM
+
+```bash
+uv run python scripts/visualiser_graphe_llm.py
+```
+Génère `docs/images/graphe_agent_llm.png`.
+
+---
+
+## LangGraph Studio
+
+Outil de développement optionnel — IDE visuel pour explorer et
+déboguer un graphe pas à pas, sans dépendre de Docker.
+
+**S'installe** : `langgraph-cli[inmem]`.
+
+**S'implémente** : `langgraph.json` déclare deux graphes distincts,
+chacun en deux variantes (doublures / services réels) :
+
+| Fichier | Graphe | Services |
+|---|---|---|
+| `app/studio_graph.py` | `agent` (base) | Doublures |
+| `app/studio_graph_reel.py` | `agent` (base) | Réels |
+| `app/studio_graph_llm.py` | `agent_llm` | Doublures |
+| `app/studio_graph_reel_llm.py` | `agent_llm` | Réels (Stockfish local, Milvus/YouTube/Anthropic réels) |
+
+**Se teste** :
+```bash
+cd backend
+uv run langgraph dev
+```
+Ouvrir `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`
+(un compte gratuit [smith.langchain.com](https://smith.langchain.com)
+est nécessaire — Studio est hébergé, mais l'exécution et les données
+restent 100 % locales).
+
+Pour un accès distant :
+```bash
+uv run langgraph dev --tunnel
+```
+
+> ⚠️ **Jamais `--host 0.0.0.0` + redirection de port routeur** —
+> exposerait un serveur de développement sans authentification à tout
+> Internet. `--tunnel` est la voie sûre pour un accès distant.
+>
+> À chaque redémarrage du tunnel, l'URL Cloudflare change et doit être
+> reconfirmée dans les *Advanced Settings* de Studio (liste blanche de
+> domaines, protection contre un lien malveillant pointant vers un
+> faux serveur).
+
+---
+
+## Étape 5 — Interface Angular *(à venir)*
+
+**S'installera** : Angular CLI, `ngx-chessboard`.
+
+**S'implémentera** : échiquier interactif synchronisé avec l'état FEN,
+panneau de recommandations (coups, contexte, vidéos, explication).
+
+---
+
+## Étape 6 — Containerisation complète *(à venir)*
+
+**Se vérifiera** : démarrage à froid de bout en bout, persistance des
+volumes Docker recréés, documentation d'installation finale.
+
+---
+
+## Étape 7 — Étude de faisabilité MCP *(à venir)*
+
+**Se concevra** (conception uniquement, non développée) : note sur les
+bénéfices/limites, schéma d'architecture MCP, étude de coûts pour le
+système avancé d'analyse vidéo (board-to-FEN + timestamp), demandé par
+Alan comme volet stratégique de la mission.
+
+---
+
+## Key Commands (aide-mémoire complet)
+
+```bash
+# ══════════════════════════════════════════════════════════════
+# DOCKER — toujours en premier, base de tout le reste
+# ══════════════════════════════════════════════════════════════
+docker compose up -d --build          # build complet + demarrage
+docker compose up -d; docker compose logs -f backend   # demarrage + suivi logs
+docker compose ps                     # etat de tous les services
+docker compose down                   # arret propre
+docker compose build --no-cache backend && docker compose up -d backend  # rebuild cible
+
+# ══════════════════════════════════════════════════════════════
+# ÉTAPE 1-2 — healthcheck, moves, evaluate
+# ══════════════════════════════════════════════════════════════
+curl http://localhost:8000/api/v1/healthcheck
+curl http://192.168.1.146:8081/api/v1/healthcheck   # via frontend, reseau local
+uv run pytest -v
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test evaluate
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test moves-invalide
+
+# ══════════════════════════════════════════════════════════════
+# ÉTAPE 3 — ingestion + RAG Milvus
+# ══════════════════════════════════════════════════════════════
+$env:MILVUS_HOST="localhost"
+uv run python scripts/ingestion/drop_collection.py
+uv run python scripts/ingestion/fetch_wikichess.py
+uv run python scripts/ingestion/fetch_wikipedia.py
+uv run python scripts/ingestion/build_corpus.py
+uv run python scripts/ingestion/indexer_corpus.py
+uv run python scripts/ingestion/diagnostic_milvus.py
+curl "http://localhost:8000/api/v1/vector-search?q=sicilienne"
+Invoke-WebRequest -Uri "http://localhost:8000/api/v1/vector-search?q=sicilienne" -UseBasicParsing
+Invoke-WebRequest -Uri http://localhost:9091/healthz -UseBasicParsing   # sante Milvus
+
+# ══════════════════════════════════════════════════════════════
+# AGENT LANGGRAPH — base (sans LLM)
+# ══════════════════════════════════════════════════════════════
+uv run pytest tests/test_agent_graphe.py -v
+uv run python scripts/visualiser_graphe.py
+$body = @{ fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; id_session = "demo-1" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent/invoke" -Method Post -Body $body -ContentType "application/json"
+docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.countDocuments()"
+
+# ══════════════════════════════════════════════════════════════
+# ÉTAPE 4 — vidéos YouTube
+# ══════════════════════════════════════════════════════════════
+uv run python scripts/test_youtube_smoke.py "Sicilian defense chess opening"
+uv run python scripts/test_youtube_adapter.py --ouverture "Ruy Lopez"
+uv run pytest tests/test_videos.py -v
+curl http://localhost:8000/api/v1/videos/Sicilienne
+uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test videos
+
+# ══════════════════════════════════════════════════════════════
+# AGENT LANGGRAPH — variante LLM (décision + synthèse)
+# ══════════════════════════════════════════════════════════════
+uv run pytest tests/test_agent_graphe_llm.py -v
+uv run python scripts/verificar_archivos_llm.py
+uv run python scripts/visualiser_graphe_llm.py
+$body = @{ fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; id_session = "demo-llm-1" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent-llm/invoke" -Method Post -Body $body -ContentType "application/json"
+
+# ══════════════════════════════════════════════════════════════
+# LANGGRAPH STUDIO
+# ══════════════════════════════════════════════════════════════
+uv run langgraph dev
+uv run langgraph dev --tunnel
+
+# ══════════════════════════════════════════════════════════════
+# DIVERS
+# ══════════════════════════════════════════════════════════════
+docker compose exec backend {commande}     # executer une commande dans le conteneur
+uv sync --group test --group dev            # tout installer (pytest, ruff, langgraph-cli...)
+uv run ruff check app/ scripts/ tests/       # lint
+```
+
+---
 
 ## Structure du dépôt
 
 ```
 .
-├── backend/                 # API FastAPI + agent LangGraph (Python, uv)
+├── backend/                    # API FastAPI + agent LangGraph (Python, uv)
 │   ├── app/
-│   │   ├── api/v1/           # Presentation : routes REST + schemas
+│   │   ├── api/v1/               # Présentation : routes REST + schémas
 │   │   │   ├── healthcheck.py
-│   │   │   ├── moves.py       # GET /moves/{fen}
-│   │   │   ├── evaluate.py    # GET /evaluate/{fen}
-│   │   │   ├── explore.py     # GET /explore/{fen}  (theorie -> Stockfish)
-│   │   │   ├── vector_search.py # GET /vector-search  (RAG, Milvus)
-│   │   │   ├── agent.py       # POST /agent/invoke  (LangGraph)
+│   │   │   ├── moves.py            # GET /moves/{fen}
+│   │   │   ├── evaluate.py         # GET /evaluate/{fen}
+│   │   │   ├── explore.py          # GET /explore/{fen}
+│   │   │   ├── vector_search.py    # GET /vector-search  (RAG)
+│   │   │   ├── videos.py           # GET /videos/{ouverture}  (YouTube)
+│   │   │   ├── agent.py            # POST /agent/invoke  (LangGraph, base)
+│   │   │   ├── agent_llm.py        # POST /agent-llm/invoke  (LangGraph, LLM)
 │   │   │   └── schemas.py
-│   │   ├── domaine/           # Modeles + ports (contrats), sans dependances
-│   │   │   ├── modeles.py
+│   │   ├── domaine/                # Modèles + ports, sans dépendances
+│   │   │   ├── modeles.py            # CoupTheorique, Evaluation, ExtraitConnaissance,
+│   │   │   │                           VideoExplicative, ResultatExploration
 │   │   │   └── ports/
-│   │   ├── application/       # Cas d'utilisation (orchestrent les ports)
-│   │   │   └── agent/          # StateGraph LangGraph
-│   │   │       ├── etat_agent.py    # EtatAgent (TypedDict)
-│   │   │       ├── noeuds_agent.py  # Noeuds = wrappers des cas d'utilisation
-│   │   │       └── graphe_agent.py  # Assemblage + compilation du graphe
-│   │   ├── infrastructure/    # Adaptateurs concrets (python-chess,
-│   │   │                       Lichess, Stockfish, Milvus,
-│   │   │                       MongoDBSaver pour le checkpointer)
-│   │   ├── core/              # Configuration + cablage des dependances
-│   │   └── main.py            # Point d'entree de l'application
-│   ├── tests/                 # Tests pytest (doublures des ports)
-│   │   └── test_agent_graphe.py  # Graphe LangGraph, sans reseau ni Mongo
-│   ├── scripts/                # Verification manuelle + outils dev
-│   │   ├── test_endpoints.py     # Verification manuelle des endpoints
-│   │   └── visualiser_graphe.py  # Genere le schema du graphe (PNG/Mermaid)
-│   ├── docs/                   # Schemas generes (voir visualiser_graphe.py)
+│   │   │       └── port_recherche_videos.py
+│   │   ├── application/            # Cas d'utilisation (orchestrent les ports)
+│   │   │   ├── rechercher_videos_service.py
+│   │   │   └── agent/                # StateGraph LangGraph
+│   │   │       ├── etat_agent.py       # EtatAgent (TypedDict, partagé base+LLM)
+│   │   │       ├── noeuds_agent.py     # Nœuds déterministes (base)
+│   │   │       ├── noeuds_agent_llm.py # Nœuds LLM (décision, synthèse, exécution video)
+│   │   │       ├── graphe_agent.py     # Graphe de base (sans LLM, inchangé)
+│   │   │       └── graphe_agent_llm.py # Graphe variante LLM (fichier séparé)
+│   │   ├── infrastructure/         # Adaptateurs concrets (python-chess, Lichess,
+│   │   │                             Stockfish, Milvus, YouTube, MongoDBSaver)
+│   │   │   └── adaptateur_youtube.py
+│   │   ├── core/                   # Configuration + câblage des dépendances
+│   │   │   └── dependances.py        # obtenir_graphe_agent / _llm, obtenir_modele_decision...
+│   │   ├── studio_graph.py         # LangGraph Studio : graphe base, doublures
+│   │   ├── studio_graph_reel.py    # LangGraph Studio : graphe base, services réels
+│   │   ├── studio_graph_llm.py     # LangGraph Studio : graphe LLM, doublures
+│   │   ├── studio_graph_reel_llm.py# LangGraph Studio : graphe LLM, services réels
+│   │   └── main.py                 # Point d'entrée de l'application
+│   ├── tests/                      # Tests pytest (doublures des ports)
+│   │   ├── fakes.py                  # Doublures partagées, dont FauxModeleDecision
+│   │   ├── test_agent_graphe.py      # Graphe de base (3 tests)
+│   │   ├── test_agent_graphe_llm.py  # Graphe variante LLM (4 tests)
+│   │   └── test_videos.py            # Endpoint YouTube (2 tests)
+│   ├── scripts/
+│   │   ├── ingestion/                # Pipeline RAG (fetch/build/index)
+│   │   ├── test_endpoints.py         # Vérification manuelle, LogTool, --test <nom>
+│   │   ├── test_youtube_smoke.py     # Smoke-test YouTube isolé
+│   │   ├── test_youtube_adapter.py   # Test via AdaptateurYoutube réel
+│   │   ├── verificar_archivos_llm.py # Vérifie la cohérence des fichiers du volet LLM
+│   │   ├── visualiser_graphe.py      # PNG du graphe de base
+│   │   └── visualiser_graphe_llm.py  # PNG du graphe variante LLM
+│   ├── docs/images/                  # Schémas générés (graphe_agent*.png)
+│   ├── langgraph.json                # Déclaration des graphes pour Studio
 │   ├── Dockerfile
 │   └── pyproject.toml
-├── frontend/                 # Application Angular (à partir de l'étape 5)
+├── frontend/                   # Application Angular (à partir de l'étape 5)
 ├── docs/
-│   └── ARCHITECTURE.md       # Architecture cible + diagrammes PlantUML
-├── docker-compose.yml         # + service mongodb (persistance de l'agent)
+│   └── ARCHITECTURE.md         # Architecture cible + diagrammes PlantUML
+├── docker-compose.yml           # backend, frontend, milvus, etcd, minio, mongodb
 ├── .env.example
 └── README.md
 ```
+
+---
 
 ## Avancement de la mission
 
 | Étape | Contenu | Statut |
 |---|---|---|
 | 1 | Environnement de dev, `docker-compose.yml`, healthcheck | ✅ terminé |
-| 2 | Agent : endpoints `/moves/{fen}` et `/evaluate/{fen}` (python-chess, Lichess, Stockfish) | ✅ terminé |
-| 3 | RAG Milvus : ingestion (Wikichess + Wikipedia), indexation, `/vector-search` | 🚧 en cours (LangGraph pas encore intégré) |
-| 4 | Intégration API YouTube | à venir |
+| 2 | Agent de base : `/moves/{fen}`, `/evaluate/{fen}`, `/explore/{fen}` | ✅ terminé |
+| 3 | RAG Milvus : ingestion, indexation, `/vector-search` | ✅ terminé |
+| — | Agent LangGraph, version de base (`/agent/invoke`) | ✅ terminé |
+| 4 | Intégration API YouTube (`/videos/{ouverture}`) | ✅ terminé |
+| — | Agent LangGraph, variante LLM (`/agent-llm/invoke`, décision + synthèse) | ✅ terminé |
+| — | LangGraph Studio (exploration/débogage visuel) | ✅ opérationnel |
 | 5 | Interface Angular (`ngx-chessboard`) | à venir |
 | 6 | Containerisation complète + démo | à venir |
 | 7 | Étude de faisabilité : système MCP d'analyse vidéo (conception) | à venir |
 
-
 | # | Service | Étape | Statut | Commande de test |
 |---|---|---|---|---|
-| 1 | **Notre API** (backend FastAPI) | 1 | ✅ implémenté | `curl http://localhost:8000/api/v1/healthcheck` |
-| 2 | **python-chess** (validation FEN) | 2 | ✅ implémenté | `curl http://localhost:8000/api/v1/moves/ceci-nest-pas-un-fen` *(attend 422)* |
-| 3 | **Stockfish** | 2 | ✅ implémenté | `curl http://localhost:8000/api/v1/evaluate/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201` |
-| 4 | **Lichess API** | 2 | ✅ implémenté (service externe en panne) | `curl http://localhost:8000/api/v1/moves/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201` |
-| 4b | ↳ Lichess en direct (sans passer par notre API) | — | diagnostic | `curl "https://explorer.lichess.ovh/masters?fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201"` |
-| 5 | **LangGraph** (orchestration de l'agent) | 3 | ⏳ à venir | *(pas de commande pour l'instant — sera testé via l'endpoint qui l'utilisera, une fois implémenté)* |
-| 6 | **etcd** (métadonnées de Milvus) | 3 | ✅ implémenté | `docker compose exec etcd etcdctl endpoint health` |
-| 7 | **minio** (stockage objets de Milvus) | 3 | ✅ implémenté | `curl -I http://localhost:9002/minio/health/live` *(port remappé)* |
-| 8 | **Milvus** | 3 | ✅ implémenté | `curl http://localhost:9091/healthz` |
-| 8b | ↳ Diagnostic du contenu indexé | 3 | ✅ implémenté | `uv run python scripts/ingestion/diagnostic_milvus.py` |
-| 9 | **YouTube API** | 4 | ⏳ à venir | `curl "https://www.googleapis.com/youtube/v3/search?part=snippet&q=chess+opening&key=$Env:YOUTUBE_API_KEY"` |
-| 10 | **MongoDB** | 6 | ⏳ à venir | `mongosh "mongodb://localhost:27017" --eval "db.runCommand({ ping: 1 })"` |
+| 1 | **Notre API** (backend FastAPI) | 1 | ✅ | `curl http://localhost:8000/api/v1/healthcheck` |
+| 2 | **python-chess** (validation FEN) | 2 | ✅ | `curl http://localhost:8000/api/v1/moves/ceci-nest-pas-un-fen` *(attend 422)* |
+| 3 | **Stockfish** | 2 | ✅ | `curl http://localhost:8000/api/v1/evaluate/{fen}` |
+| 4 | **Lichess API** (+ repli Polyglot) | 2 | ✅ | `curl http://localhost:8000/api/v1/moves/{fen}` |
+| 5 | **etcd** (métadonnées Milvus) | 3 | ✅ | `docker compose exec etcd etcdctl endpoint health` |
+| 6 | **minio** (stockage objets Milvus) | 3 | ✅ | `curl -I http://localhost:9002/minio/health/live` |
+| 7 | **Milvus** | 3 | ✅ | `curl http://localhost:9091/healthz` |
+| 8 | **LangGraph** (base) | — | ✅ | `POST /api/v1/agent/invoke` |
+| 9 | **YouTube API** | 4 | ✅ | `curl http://localhost:8000/api/v1/videos/Sicilienne` |
+| 10 | **MongoDB** (checkpoints) | — | ✅ | `mongosh "mongodb://localhost:27017" --eval "db.runCommand({ping:1})"` |
+| 11 | **Anthropic Claude** (décision + synthèse) | — | ✅ | `POST /api/v1/agent-llm/invoke` |
+| 12 | **LangGraph Studio** | — | ✅ | `uv run langgraph dev` |
 
-
+---
 
 ## Points de vigilance
 
-- Les versions de Python (3.12) et Node.js sont figées dans les
-  `Dockerfile` respectifs pour garantir la reproductibilité.
-- Les ports exposés (`BACKEND_PORT`, `FRONTEND_PORT`) sont
-  configurables via `.env` pour éviter tout conflit avec d'autres
-  services déjà en cours sur la machine hôte.
-- Le binaire Stockfish est installé dans l'image Docker du backend
-  (`apt-get install stockfish`) ; en local hors Docker, il doit être
-  installé séparément ou `STOCKFISH_PATH` défini dans `.env`.
-- Les appels à des API externes (Lichess, puis YouTube à l'étape 4)
-  sont volontairement tolérants aux pannes : une indisponibilité
-  externe ne doit jamais faire planter l'agent, seulement dégrader la
-  réponse (voir note ci-dessus sur l'étape 2).
-
-  ### Résilience de `/moves/{fen}` : repli local Polyglot
-
-Pour ne pas dépendre uniquement de la disponibilité de Lichess (voir
-panne documentée ci-dessus), l'endpoint `/moves/{fen}` utilise un
-adaptateur composite avec repli automatique :
-
-1. Tente d'abord l'**API Lichess** (Opening Explorer).
-2. Si elle échoue ou renvoie une liste vide, retombe sur un **livre
-   Polyglot local** (`data/polyglot/livre_ouvertures.bin`), lu sans
-   aucun appel réseau — donc jamais indisponible.
-
-```bash
-GET /api/v1/moves/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201
-```
-```json
-[
-  {"uci": "e2e4", "san": "e4", "nombre_parties": 1},
-  {"uci": "d2d4", "san": "d4", "nombre_parties": 1},
-  {"uci": "c2c4", "san": "c4", "nombre_parties": 1}
-]
-```
-
-> ⚠️ **Point d'attention** : pour les entrées venant du livre Polyglot,
-> `nombre_parties` n'est **pas** un nombre de parties réelles (contrairement
-> à Lichess) mais le *poids* (`weight`) assigné par le livre à ce coup —
-> réutilisé par simplicité dans le même champ du modèle de domaine.
-
-Le livre ne couvre que les lignes d'ouverture connues ; au-delà, il
-renvoie aussi une liste vide (comportement identique à Lichess), donc
-la logique de repli vers Stockfish (étape 3/4) reste cohérente.
-
-Variable d'environnement optionnelle (`.env`) :
-```properties
-POLYGLOT_BOOK_PATH=
-```
-Laissée vide, le code retombe automatiquement sur
-`data/polyglot/livre_ouvertures.bin` (chemin par défaut résolu dans
-`app/core/dependances.py`).
-
-### Réponse enrichie de `/evaluate/{fen}`
-
-Depuis l'étape 2, `/evaluate/{fen}` ne retourne plus seulement un score
-brut : la réponse inclut aussi le coup recommandé par Stockfish, la
-profondeur de recherche utilisée, et le FEN en écho (utile pour tracer
-plusieurs appels en parallèle dans les logs).
-
-```bash
-GET /api/v1/evaluate/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR%20w%20KQkq%20-%200%201
-```
-```json
-{
-  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  "evaluation": {
-    "type": "cp",
-    "valeur": 39,
-    "score": "+0.39"
-  },
-  "coup_recommande": "e2e4",
-  "profondeur": 15
-}
-```
-
-> ⚠️ **Décision en attente** : les champs sont actuellement nommés en
-> français (`valeur`, `coup_recommande`, `profondeur`), cohérent avec le
-> reste de l'API (`nombre_parties`, etc.). Si le frontend Angular ou un
-> client externe attend des noms anglais (`value`, `best_move`, `depth`),
-> il faudra renommer les champs dans `app/api/v1/schemas.py` avant
-> l'étape 5 — c'est un changement isolé à ce seul fichier.
-
+- Versions de Python (3.12) et Node.js figées dans les `Dockerfile`
+  pour la reproductibilité.
+- Ports exposés configurables via `.env`.
+- Stockfish est installé dans l'image Docker du backend
+  (`apt-get install stockfish`) ; en local hors Docker,
+  `STOCKFISH_PATH` doit être défini dans `.env`.
+- Les appels aux API externes (Lichess, YouTube, Anthropic) sont
+  volontairement tolérants aux pannes : une indisponibilité externe
+  dégrade la réponse (liste vide, repli heuristique), ne fait jamais
+  planter l'agent.
+- **`uv run ...` doit toujours être lancé depuis `backend/`** —
+  exécuté depuis la racine du dépôt, `uv` ne trouve ni le
+  `pyproject.toml`, ni le `.venv`, ni les scripts du projet.
+- **PowerShell natif** : `curl` y est un alias d'`Invoke-WebRequest`,
+  incompatible avec la syntaxe `-H`/`-d` habituelle. Utiliser
+  `curl.exe` explicitement, `Invoke-RestMethod`, ou WSL2.
+- **`.env` partagé** entre Docker et l'exécution locale : une variable
+  utile en local (ex. `MILVUS_HOST=localhost` pour un script lancé
+  hors Docker) peut casser le backend en conteneur si elle y reste —
+  préférer une variable de session (`$env:...`) pour un usage ponctuel.
+- **`EtatAgent`** (`TypedDict`) : LangGraph ignore silencieusement
+  toute clé d'état non déclarée — voir l'avertissement dans la section
+  [variante LLM](#agent-langgraph-variante-llm-décision-synthèse).
+- `backend/.langgraph_api/` (cache runtime de `langgraph dev`) est
+  ignoré par git — se régénère seul, ne jamais le committer.
 
 ---
 

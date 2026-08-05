@@ -22,3 +22,6 @@ backend/data/corpus/
 .DS_Store
 .vscode/
 .idea/
+
+# Cache runtime de LangGraph Studio (langgraph dev)
+backend/.langgraph_api/

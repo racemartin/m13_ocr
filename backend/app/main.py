@@ -15,6 +15,7 @@ from   app.api.v1 import evaluate       # Route d'evaluation de position
 from   app.api.v1 import explore        # Route combinee (theorie/moteur)
 from   app.api.v1 import vector_search  # Route de recherche vectorielle (RAG)
 from   app.api.v1 import agent          # Route de l'agent complet (LangGraph)
+from   app.api.v1 import agent_llm      # Route de l'agent, variante LLM
 from   app.api.v1 import videos         # Route de recherche de videos (YouTube)
 
 
@@ -34,6 +35,7 @@ application.include_router(evaluate.routeur,      prefix="/api/v1")
 application.include_router(explore.routeur,       prefix="/api/v1")
 application.include_router(vector_search.routeur, prefix="/api/v1")
 application.include_router(agent.routeur,         prefix="/api/v1")
+application.include_router(agent_llm.routeur,     prefix="/api/v1")
 application.include_router(videos.routeur,        prefix="/api/v1")
 
 # ######################################################################

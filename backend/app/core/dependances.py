@@ -12,6 +12,7 @@ from   functools import lru_cache    # Instances singleton reutilisables
 
 # Bibliotheque tierce
 from   dotenv import load_dotenv    # Charge .env dans os.environ
+from   langchain_anthropic import ChatAnthropic    # Modele de decision
 
 # Modules internes
 from   app.application.obtenir_coups_theoriques_service import (  # Cas
@@ -46,6 +47,9 @@ from   app.infrastructure.adaptateur_checkpointer_mongo import (  # Check-
     construire_checkpointer_mongo,                                 # pointer
 )
 from   app.application.agent.graphe_agent import construire_graphe  # Agent
+from   app.application.agent.graphe_agent_llm import (  # Agent + LLM
+    construire_graphe_llm,                                # (variante)
+)
 from   app.infrastructure.adaptateur_youtube import AdaptateurYoutube  # API
 from   app.application.rechercher_videos_service import (              # Cas
     RechercherVideosService,                                            # usage
@@ -73,6 +77,10 @@ MODELE_EMBEDDINGS_PAR_DEFAUT = "paraphrase-multilingual-MiniLM-L12-v2"
 
 # Parametre par defaut de connexion MongoDB (persistance de l'agent)
 MONGO_URI_PAR_DEFAUT = "mongodb://mongodb:27017"
+
+# Modele leger, suffisant pour une decision structuree simple (pas de
+# generation de prose longue) -- pas besoin du modele le plus capable ici.
+MODELE_DECISION_PAR_DEFAUT = "claude-haiku-4-5-20251001"
 
 
 # ------------------------------------------------------------------------
@@ -186,10 +194,31 @@ def obtenir_checkpointer_agent():
 
 
 @lru_cache
+def obtenir_modele_decision() -> ChatAnthropic:
+    nom_modele = os.getenv("ANTHROPIC_MODEL") or MODELE_DECISION_PAR_DEFAUT
+    # ANTHROPIC_API_KEY est lue automatiquement par ChatAnthropic depuis
+    # l'environnement (deja charge par load_dotenv() plus haut) -- pas
+    # besoin de la passer explicitement ici.
+    return ChatAnthropic(model=nom_modele, temperature=0.0)
+
+
+@lru_cache
 def obtenir_graphe_agent():
     return construire_graphe(
         service_coups      = obtenir_service_coups_theoriques(),
         service_evaluation = obtenir_service_evaluation(),
         service_contexte   = obtenir_service_recherche_contexte(),
         checkpointer        = obtenir_checkpointer_agent(),
+    )
+
+
+@lru_cache
+def obtenir_graphe_agent_llm():
+    return construire_graphe_llm(
+        service_coups      = obtenir_service_coups_theoriques(),
+        service_evaluation = obtenir_service_evaluation(),
+        service_contexte   = obtenir_service_recherche_contexte(),
+        service_videos      = obtenir_service_videos(),
+        modele_decision      = obtenir_modele_decision(),
+        checkpointer          = obtenir_checkpointer_agent(),
     )
