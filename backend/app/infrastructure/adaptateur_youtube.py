@@ -18,7 +18,7 @@ from   typing import Any    # Reponse brute de l'API (dict non type)
 
 # Bibliotheques tierces
 from   googleapiclient.discovery import build       # Client API Google
-from   googleapiclient.errors import HttpError       # Erreurs HTTP de l'API
+from   googleapiclient.errors import HttpError      # Erreurs HTTP de l'API
 
 # Modules internes
 from   app.domaine.modeles import VideoExplicative                  # Modele

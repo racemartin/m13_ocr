@@ -1,0 +1,129 @@
+.admin-debug {
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+}
+
+h2 {
+  background: #eaeaea;
+  padding: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.parametres {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.parametres h2 {
+  grid-column: 1 / -1;
+}
+
+.parametres label {
+  display: contents;
+}
+
+.parametres label > span {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.parametres input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.colonnes {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.request {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.request h3, .response h3 {
+  background: #fdf6b2;
+  padding: 0.4rem 0.8rem;
+  margin: 0 0 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.request h4 {
+  margin: 0.7rem 0 0.15rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.request button {
+  border: 1px solid #999;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  background: #c9c9f5;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.request button:hover {
+  filter: brightness(0.95);
+}
+
+.request button.methode-post {
+  background: #4ade80;
+}
+
+.request button.selectionne {
+  outline: 2px solid #333;
+  outline-offset: 1px;
+}
+
+.response {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 1rem;
+  min-height: 320px;
+}
+
+.response .vide {
+  color: #888;
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.response .statut {
+  font-weight: 600;
+  margin-right: 0.75rem;
+}
+
+.response .duree {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.response .erreur {
+  color: #c0392b;
+}
+
+.response pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}

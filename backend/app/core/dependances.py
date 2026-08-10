@@ -12,7 +12,8 @@ from   functools import lru_cache    # Instances singleton reutilisables
 
 # Bibliotheque tierce
 from   dotenv import load_dotenv    # Charge .env dans os.environ
-from   langchain_anthropic import ChatAnthropic    # Modele de decision
+from   langchain_anthropic import ChatAnthropic    # Modele de decision (Anthropic)
+from   langchain_google_genai import ChatGoogleGenerativeAI  # (Google, repli)
 
 # Modules internes
 from   app.application.obtenir_coups_theoriques_service import (  # Cas
@@ -194,7 +195,22 @@ def obtenir_checkpointer_agent():
 
 
 @lru_cache
-def obtenir_modele_decision() -> ChatAnthropic:
+def obtenir_modele_decision():
+    """Construit le modele de decision, avec le fournisseur choisi par
+    LLM_PROVIDER ("anthropic" par defaut, ou "google" en repli).
+
+    Interchangeable a dessein : noeuds_agent_llm.py n'utilise que
+    .with_structured_output() et .invoke(), l'interface commune a tous
+    les Chat Models LangChain -- aucun code ne depend d'Anthropic
+    specifiquement, seule CETTE fabrique choisit le fournisseur.
+    """
+    fournisseur = (os.getenv("LLM_PROVIDER") or "anthropic").lower()
+
+    if fournisseur == "google":
+        nom_modele = os.getenv("GOOGLE_MODEL") or "gemini-flash-latest"
+        # GOOGLE_API_KEY est lue automatiquement depuis l'environnement.
+        return ChatGoogleGenerativeAI(model=nom_modele)
+
     nom_modele = os.getenv("ANTHROPIC_MODEL") or MODELE_DECISION_PAR_DEFAUT
     # ANTHROPIC_API_KEY est lue automatiquement par ChatAnthropic depuis
     # l'environnement (deja charge par load_dotenv() plus haut) -- pas

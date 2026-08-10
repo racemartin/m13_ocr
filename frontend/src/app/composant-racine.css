@@ -1,0 +1,44 @@
+.mise-en-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.menu-lateral {
+  flex: 0 0 200px;
+  border-right: 1px solid #ddd;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.menu-lateral h1 {
+  font-size: 1.15rem;
+  margin: 0 0 1.5rem;
+}
+
+.menu-lateral button {
+  text-align: left;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.menu-lateral button:hover {
+  background: #f2f2f2;
+}
+
+.menu-lateral button.actif {
+  background: #e0e7ff;
+  font-weight: 600;
+}
+
+.contenu {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}

@@ -1,4 +1,29 @@
-<main>
-  <h1>FFE Chess Agent — POC</h1>
-  <p>État du backend : <strong>{{ statutBackend }}</strong></p>
-</main>
+<div class="mise-en-page">
+
+  <nav class="menu-lateral">
+    <h1>FFE Chess Agent</h1>
+    <button
+      type="button"
+      [class.actif]="vueActive() === 'echiquier'"
+      (click)="choisirVue('echiquier')"
+    >
+      Échiquier
+    </button>
+    <button
+      type="button"
+      [class.actif]="vueActive() === 'admin'"
+      (click)="choisirVue('admin')"
+    >
+      Admin
+    </button>
+  </nav>
+
+  <main class="contenu">
+    @if (vueActive() === 'admin') {
+      <app-admin-debug />
+    } @else {
+      <app-echiquier />
+    }
+  </main>
+
+</div>

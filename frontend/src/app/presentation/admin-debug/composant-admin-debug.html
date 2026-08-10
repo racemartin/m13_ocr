@@ -1,0 +1,64 @@
+<div class="admin-debug">
+
+  <section class="parametres">
+    <h2>Parameters</h2>
+    <label>
+      <span>FEN</span>
+      <input type="text" [ngModel]="fen()" (ngModelChange)="fen.set($event)" />
+    </label>
+    <label>
+      <span>ouverture</span>
+      <input type="text" [ngModel]="ouverture()" (ngModelChange)="ouverture.set($event)" />
+    </label>
+    <label>
+      <span>top-K</span>
+      <input type="number" [ngModel]="topK()" (ngModelChange)="topK.set($event)" />
+    </label>
+    <label>
+      <span>id-session</span>
+      <input type="text" [ngModel]="idSession()" (ngModelChange)="idSession.set($event)" />
+    </label>
+  </section>
+
+  <section class="actions">
+    <h2>Actions</h2>
+    <div class="colonnes">
+
+      <div class="request">
+        <h3>Request</h3>
+        @for (groupe of groupes(); track groupe) {
+          <h4>{{ groupe }}</h4>
+          @for (descripteur of endpointsDuGroupe(groupe); track descripteur.id) {
+            <button
+              type="button"
+              [class.selectionne]="endpointSelectionne() === descripteur.id"
+              [class.methode-post]="descripteur.methode === 'POST'"
+              (click)="declencherAppel(descripteur)"
+            >
+              {{ descripteur.libelle }}
+            </button>
+          }
+        }
+      </div>
+
+      <div class="response">
+        <h3>Response</h3>
+        @if (enCours()) {
+          <p>Chargement en cours...</p>
+        } @else if (erreur()) {
+          <p class="erreur">{{ erreur() }}</p>
+        } @else if (reponseBrute()) {
+          <p>
+            <span class="statut">{{ statutHttp() }}</span>
+            <span class="duree">{{ dureeMs() }} ms</span>
+          </p>
+          <pre>{{ reponseBrute() }}</pre>
+        } @else {
+          <p class="vide">Response API (raw)</p>
+        }
+      </div>
+
+    </div>
+  </section>
+
+</div>

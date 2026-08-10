@@ -19,10 +19,12 @@ dependencies = [
     "python-dotenv>=1.0.1",      # Chargement des variables secrètes depuis un fichier .env
     # --- Agent IA & Orchestration ---
     "langgraph>=1.2.10,<2.0.0",   # Orchestration de l'agent (graphe d'étapes, outils)
-    # NOTE : version plancher relevee (etait >=0.2.45) suite a un bug de
-    # fusion d'etat observe avec une version plus ancienne -- voir le
-    # commentaire au-dessus de EtatAgent dans etat_agent.py.
+    # NOTE : version plancher relevee (etait >=0.2.45) simplement pour
+    # fixer une base testee et connue -- la cause d'un bug rencontre en
+    # cours de route etait ailleurs (EtatAgent incomplet, voir
+    # etat_agent.py), pas une regression de LangGraph.
     "langchain-anthropic>=0.3.0",# Intégration du LLM Claude comme cerveau de l'agent
+    "langchain-google-genai>=2.0.0", # Repli Gemini (LLM_PROVIDER=google)
     "langchain-core>=0.3.15",    # Abstractions communes utilisées par LangGraph
     # --- Logique échiquéenne ---
     "chess>=1.11.1",             # Validation des positions FEN et légalité des coups

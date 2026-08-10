@@ -375,6 +375,33 @@ Réponse attendue (`evaluation: null` si théorie trouvée) :
 
 ```bash
 docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.countDocuments()"
+
+# Lister les collections existants
+docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.getCollectionNames()"
+
+[ 'checkpoints', 'checkpoint_writes' ]
+
+# Lister les differents thread_id avec le nombre  d'entrees de chacun.
+docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.aggregate([{ `$group: { _id: '`$thread_id', total: { `$sum: 1 } } }, { `$sort: { total: -1 } }])"
+
+[
+  { _id: 'demo-insomnia-1', total: 39 },
+  { _id: 'prueba-llm-1', total: 14 },
+  { _id: 'prueba-original-1', total: 8 },
+  { _id: 'demo-1', total: 8 },
+  { _id: 'demo-curl-1', total: 4 }
+]
+
+# Le dernier checkpoint
+$env:MONGO_URI = "mongodb://localhost:27017"
+uv run python scripts/inspeccionar_checkpoint.py --thread-id demo-insomnia-1
+
+# Tout le historial (un por chaque invocation)
+uv run python scripts/inspeccionar_checkpoint.py --thread-id demo-insomnia-1 --historique
+
+# Sur le graphe avec LLM
+uv run python scripts/inspeccionar_checkpoint.py --thread-id prueba-llm-1 --graphe agent_llm
+
 ```
 Le compteur augmente à chaque appel avec le même `id_session`.
 
@@ -601,7 +628,7 @@ docker compose up -d --build          # build complet + demarrage
 docker compose up -d; docker compose logs -f backend   # demarrage + suivi logs
 docker compose ps                     # etat de tous les services
 docker compose down                   # arret propre
-docker compose build --no-cache backend && docker compose up -d backend  # rebuild cible
+docker compose build --no-cache backend ; docker compose up -d backend  # rebuild cible
 
 # ══════════════════════════════════════════════════════════════
 # ÉTAPE 1-2 — healthcheck, moves, evaluate

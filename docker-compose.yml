@@ -10,9 +10,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
     depends_on:
-      - milvus-standalone
-      - mongodb
+      milvus-standalone:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/healthcheck"]
       interval: 10s
@@ -111,3 +115,4 @@ volumes:
   minio_data:
   milvus_data:
   mongo_data:
+  huggingface_cache:
