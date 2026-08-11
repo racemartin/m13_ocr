@@ -37,6 +37,7 @@ from   app.infrastructure.adaptateur_lichess import (       # Adaptateur
 from   app.infrastructure.adaptateur_polyglot import (      # Adaptateur
     AdaptateurPolyglot,                                     # (secours local)
 )
+from   app.infrastructure.adaptateur_eco import AdaptateurEco    # Identif. ECO
 from   app.infrastructure.adaptateur_theorie_avec_secours import (  # Compo-
     AdaptateurTheorieAvecSecours,                                    # sition
 )
@@ -55,6 +56,9 @@ from   app.infrastructure.adaptateur_youtube import AdaptateurYoutube  # API
 from   app.application.rechercher_videos_service import (              # Cas
     RechercherVideosService,                                            # usage
 )
+from   app.application.identifier_eco_service import (    # Cas
+    IdentifierEcoService,                                   # d'usage
+)
 
 # NOTE : necessaire pour que os.getenv(...) trouve les variables (MONGO_URI,
 # YOUTUBE_API_KEY, STOCKFISH_PATH...) en local (uv run ...), pas seulement
@@ -69,6 +73,12 @@ CHEMIN_STOCKFISH_PAR_DEFAUT = "/usr/games/stockfish"
 CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT = str(
     Path(__file__).resolve().parent.parent.parent
     / "data" / "polyglot" / "livre_ouvertures.bin"
+)
+
+# Chemin par defaut de l'index ECO precalcule (relatif a app/core/)
+CHEMIN_INDEX_ECO_PAR_DEFAUT = str(
+    Path(__file__).resolve().parent.parent.parent
+    / "data" / "eco" / "index_eco.json"
 )
 
 # Parametres par defaut de la base vectorielle (Etape 3)
@@ -103,6 +113,12 @@ def obtenir_adaptateur_polyglot() -> AdaptateurPolyglot:
         CHEMIN_LIVRE_POLYGLOT_PAR_DEFAUT
     )
     return AdaptateurPolyglot(chemin_livre=chemin_livre)
+
+
+@lru_cache
+def obtenir_adaptateur_eco() -> AdaptateurEco:
+    chemin_index = os.getenv("ECO_INDEX_PATH") or CHEMIN_INDEX_ECO_PAR_DEFAUT
+    return AdaptateurEco(chemin_index=chemin_index)
 
 
 @lru_cache
@@ -219,12 +235,18 @@ def obtenir_modele_decision():
 
 
 @lru_cache
+def obtenir_service_identification_eco() -> IdentifierEcoService:
+    return IdentifierEcoService(identification_eco=obtenir_adaptateur_eco())
+
+
+@lru_cache
 def obtenir_graphe_agent():
     return construire_graphe(
         service_coups      = obtenir_service_coups_theoriques(),
         service_evaluation = obtenir_service_evaluation(),
         service_contexte   = obtenir_service_recherche_contexte(),
-        checkpointer        = obtenir_checkpointer_agent(),
+        service_eco         = obtenir_service_identification_eco(),
+        checkpointer          = obtenir_checkpointer_agent(),
     )
 
 
@@ -234,7 +256,8 @@ def obtenir_graphe_agent_llm():
         service_coups      = obtenir_service_coups_theoriques(),
         service_evaluation = obtenir_service_evaluation(),
         service_contexte   = obtenir_service_recherche_contexte(),
-        service_videos      = obtenir_service_videos(),
-        modele_decision      = obtenir_modele_decision(),
-        checkpointer          = obtenir_checkpointer_agent(),
+        service_eco         = obtenir_service_identification_eco(),
+        service_videos        = obtenir_service_videos(),
+        modele_decision        = obtenir_modele_decision(),
+        checkpointer            = obtenir_checkpointer_agent(),
     )

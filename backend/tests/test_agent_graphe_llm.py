@@ -18,6 +18,9 @@ from   app.application.rechercher_contexte_ouverture_service import (  # Cas
 from   app.application.rechercher_videos_service import (  # Cas
     RechercherVideosService,                                # d'usage
 )
+from   app.application.identifier_eco_service import (      # Cas
+    IdentifierEcoService,                                    # d'usage
+)
 from   app.application.agent.graphe_agent_llm import construire_graphe_llm
 from   app.application.agent.noeuds_agent_llm import DecisionVideo
 from   app.domaine.modeles import (
@@ -27,13 +30,14 @@ from   tests.conftest import FEN_POSITION_DEPART
 from   tests.fakes import (
     FauxValidateurEchecs, FauxTheorieOuvertures, FauxMoteurEvaluation,
     FauxBaseConnaissances, FauxRechercheVideos, FauxModeleDecision,
+    FauxIdentificationEco,
 )
 
 
 def construire_graphe_llm_de_test(
     coups=None, evaluation=None, extraits=None, videos=None,
     decision_video=None, texte_genere="Explication de test.",
-    fen_valide=True,
+    fen_valide=True, eco=None,
 ):
     service_coups = ObtenirCoupsTheoriquesService(
         validateur = FauxValidateurEchecs(fen_valide=fen_valide),
@@ -49,6 +53,9 @@ def construire_graphe_llm_de_test(
     service_videos = RechercherVideosService(
         recherche_videos = FauxRechercheVideos(videos=videos or []),
     )
+    service_eco = IdentifierEcoService(
+        identification_eco = FauxIdentificationEco(resultat=eco),
+    )
     modele_decision = FauxModeleDecision(
         decision=decision_video, texte_genere=texte_genere,
     )
@@ -57,9 +64,10 @@ def construire_graphe_llm_de_test(
         service_coups      = service_coups,
         service_evaluation = service_evaluation,
         service_contexte   = service_contexte,
-        service_videos      = service_videos,
-        modele_decision      = modele_decision,
-        checkpointer          = None,
+        service_eco         = service_eco,
+        service_videos        = service_videos,
+        modele_decision        = modele_decision,
+        checkpointer            = None,
     )
 
 
@@ -155,14 +163,18 @@ def test_graphe_llm_se_degrade_si_le_modele_echoue():
     service_videos = RechercherVideosService(
         recherche_videos = FauxRechercheVideos(videos=[]),
     )
+    service_eco = IdentifierEcoService(
+        identification_eco = FauxIdentificationEco(resultat=None),
+    )
 
     graphe = construire_graphe_llm(
         service_coups      = service_coups,
         service_evaluation = service_evaluation,
         service_contexte   = service_contexte,
-        service_videos      = service_videos,
-        modele_decision      = ModeleQuiEchoue(),
-        checkpointer          = None,
+        service_eco         = service_eco,
+        service_videos        = service_videos,
+        modele_decision        = ModeleQuiEchoue(),
+        checkpointer            = None,
     )
 
     # Ne doit PAS lever d'exception malgre l'echec du LLM

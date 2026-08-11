@@ -13,7 +13,8 @@ from   pydantic import BaseModel    # Validation et serialisation
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles
-    CoupTheorique, Evaluation, ExtraitConnaissance, ResultatExploration,
+    CoupTheorique, Evaluation, ExtraitConnaissance, InfoEco,
+    ResultatExploration,
 )
 
 
@@ -28,6 +29,22 @@ class CoupTheoriqueSchema(BaseModel):
             uci            = coup.uci,
             san            = coup.san,
             nombre_parties = coup.nombre_parties,
+        )
+
+
+class InfoEcoSchema(BaseModel):
+    code      : str
+    nom       : str
+    famille   : str
+    categorie : str
+
+    @staticmethod
+    def depuis_domaine(info: InfoEco) -> "InfoEcoSchema":
+        return InfoEcoSchema(
+            code      = info.code,
+            nom       = info.nom,
+            famille   = info.famille,
+            categorie = info.categorie,
         )
 
 

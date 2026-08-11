@@ -1,0 +1,56 @@
+.panneau {
+  padding: 1.5rem;
+  max-width: 360px;
+}
+
+h2 {
+  background: #eaeaea;
+  padding: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #666;
+  margin: 1rem 0 0.4rem;
+}
+
+.etat {
+  color: #888;
+  font-style: italic;
+}
+
+.etat.erreur {
+  color: #c0392b;
+  font-style: normal;
+}
+
+.coups, .videos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.coups li, .videos li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.3rem;
+}
+
+.detail {
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.videos a {
+  color: #2563eb;
+  text-decoration: none;
+}

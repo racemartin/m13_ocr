@@ -1,10 +1,14 @@
 # ############################################################################
-# Route : agent complet (theorie ou moteur, puis contexte RAG)
+# Route : agent complet (theorie ou moteur, puis contexte RAG) -- SANS LLM
 # ############################################################################
-# Traduit la requete HTTP vers le graphe LangGraph. A la difference de
-# /explore/{fen}, cette route enrichit toujours la reponse avec le
+# Traduit la requete HTTP vers le graphe LangGraph de base. A la difference
+# de /explore/{fen}, cette route enrichit toujours la reponse avec le
 # contexte pedagogique RAG de l'Etape 3, et persiste l'etat de la
 # conversation par id_session dans MongoDB.
+#
+# NOTE : reste volontairement inchange depuis sa version initiale. La
+# variante avec decision LLM (video + synthese pedagogique) vit a part,
+# dans agent_llm.py -- voir POST /api/v1/agent-llm/invoke.
 
 # Bibliotheques tierces
 from   fastapi import APIRouter, Depends, HTTPException    # Framework web
@@ -13,6 +17,7 @@ from   pydantic import BaseModel    # Schema de requete
 # Modules internes
 from   app.api.v1.schemas import (    # Schema HTTP
     CoupTheoriqueSchema, EvaluationSchema, ExtraitConnaissanceSchema,
+    InfoEcoSchema,
 )
 from   app.core.dependances import obtenir_graphe_agent    # Injection
 from   app.tools.rafael.log_tool import LogTool    # Journalisation coloree
@@ -32,6 +37,7 @@ class ReponseAgent(BaseModel):
     """Schema HTTP de la reponse de l'agent."""
 
     fen                : str
+    eco                : InfoEcoSchema | None             = None
     coups_theoriques   : list[CoupTheoriqueSchema]       = []
     evaluation         : EvaluationSchema | None         = None
     contexte_ouverture : list[ExtraitConnaissanceSchema] = []
@@ -75,9 +81,11 @@ def invoquer_agent(
     )
 
     evaluation = resultat.get("evaluation")
+    eco = resultat.get("eco")
 
     return ReponseAgent(
         fen                = requete.fen,
+        eco                = InfoEcoSchema.depuis_domaine(eco) if eco else None,
         coups_theoriques   = [
             CoupTheoriqueSchema.depuis_domaine(coup)
             for coup in resultat.get("coups_theoriques") or []

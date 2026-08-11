@@ -1,0 +1,18 @@
+<div class="disposition">
+  <div class="zone-tableau">
+    <h2>Échiquier</h2>
+    <ngx-chess-board
+      #tableau
+      [size]="480"
+      [showCoords]="true"
+      (moveChange)="surCoupJoue()"
+    ></ngx-chess-board>
+    <button type="button" (click)="reinitialiser()">Nouvelle partie</button>
+  </div>
+
+  <app-panneau-recommandations
+    [reponse]="reponse()"
+    [enCours]="enCours()"
+    [erreur]="erreur()"
+  />
+</div>

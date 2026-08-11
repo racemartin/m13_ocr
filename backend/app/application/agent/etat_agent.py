@@ -10,21 +10,23 @@
 # conversion manuelle en dict n'est donc necessaire ici ; la conversion
 # vers un schema HTTP reste, elle, la responsabilite de app/api/v1/schemas.py.
 #
-# NOTE (version) : pyproject.toml fixe langgraph>=1.2.10 explicitement.
-# Une version plus ancienne (observee : la resolution par defaut de
-# "langgraph>=0.2.45") a montre un bug reproductible ou la mise a jour
-# d'etat d'un noeud n'est pas vue par l'arete conditionnelle suivante ni
-# par le resultat final -- confirme par un script de repro minimal,
-# independant du reste du projet. Ne pas assouplir cette borne sans
-# retester ce scenario precis (decision -> arete conditionnelle -> cle
-# absente du resultat).
+# POINT DE VIGILANCE (confirme en conditions reelles) : LangGraph ignore
+# SILENCIEUSEMENT toute cle renvoyee par un noeud si elle n'est pas
+# declaree ici, dans EtatAgent -- aucune erreur, aucun warning. Un noeud
+# peut tourner, calculer la bonne valeur, l'ecrire dans son log, et cette
+# valeur disparait quand meme du resultat final si son champ manque dans
+# ce TypedDict. Verifie : ce n'est PAS un bug de version de LangGraph
+# (reproduit a l'identique sur langgraph==1.2.10 avec et sans le bug,
+# selon que ce fichier declarait ou non les 4 champs ci-dessous). A
+# chaque nouveau champ ajoute par un noeud (dans noeuds_agent.py ou
+# noeuds_agent_llm.py), l'ajouter ICI EN PREMIER, avant d'ecrire le noeud.
 
 # Bibliotheque standard
 from   typing import TypedDict    # Structure typee pour l'etat du graphe
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles du domaine
-    CoupTheorique, Evaluation, ExtraitConnaissance, VideoExplicative,
+    CoupTheorique, Evaluation, ExtraitConnaissance, InfoEco, VideoExplicative,
 )
 
 
@@ -38,11 +40,11 @@ class EtatAgent(TypedDict, total=False):
 
     fen                : str                        # Position a analyser
     id_session         : str                        # thread_id (Mongo)
-    coups_theoriques   : list[CoupTheorique]        # Cf. /moves
-    evaluation         : Evaluation                 # Cf. /evaluate
-    contexte_ouverture : list[ExtraitConnaissance]  # Cf. /vector-search
-                                                    # -------------------------
-    rechercher_video   : bool                       # Decision du LLM
-    requete_video      : str                        # Requete choisie par le LLM
-    videos             : list[VideoExplicative]     # Resultat, si recherche faite
-    explication        : str                        # Synthese pedagogique (LLM)
+    eco                : InfoEco | None               # Code ECO identifie
+    coups_theoriques   : list[CoupTheorique]         # Cf. /moves
+    evaluation         : Evaluation                  # Cf. /evaluate
+    contexte_ouverture : list[ExtraitConnaissance]    # Cf. /vector-search
+    rechercher_video   : bool                        # Decision du LLM
+    requete_video      : str                         # Requete choisie par le LLM
+    videos             : list[VideoExplicative]       # Resultat, si recherche faite
+    explication        : str                         # Synthese pedagogique (LLM)

@@ -20,6 +20,9 @@
             ],
             "polyfills": [
               "zone.js"
+            ],
+            "allowedCommonJsDependencies": [
+              "lodash"
             ]
           }
         },

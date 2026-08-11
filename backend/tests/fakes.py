@@ -7,7 +7,7 @@
 
 # Modules internes
 from   app.domaine.modeles import (    # Modeles
-    CoupTheorique, Evaluation, ExtraitConnaissance, VideoExplicative,
+    CoupTheorique, Evaluation, ExtraitConnaissance, InfoEco, VideoExplicative,
 )
 from   app.domaine.ports.port_validateur_echecs import (       # Ports
     PortValidateurEchecs,
@@ -23,6 +23,9 @@ from   app.domaine.ports.port_base_connaissances import (
 )
 from   app.domaine.ports.port_recherche_videos import (
     PortRechercheVideos,
+)
+from   app.domaine.ports.port_identification_eco import (
+    PortIdentificationEco,
 )
 
 
@@ -64,6 +67,7 @@ class FauxBaseConnaissances(PortBaseConnaissances):
 
     def __init__(self, extraits: list[ExtraitConnaissance] | None = None) -> None:
         self.extraits = extraits if extraits is not None else []
+        self.derniere_requete: str | None = None    # Pour verifier la requete envoyee
 
     def indexer_documents(self, dossier: str) -> int:
         return len(self.extraits)
@@ -71,6 +75,7 @@ class FauxBaseConnaissances(PortBaseConnaissances):
     def rechercher_contexte(
         self, requete: str, top_k: int = 3,
     ) -> list[ExtraitConnaissance]:
+        self.derniere_requete = requete
         return self.extraits[:top_k]
 
 
@@ -84,6 +89,16 @@ class FauxRechercheVideos(PortRechercheVideos):
         self, requete: str, max_resultats: int = 5,
     ) -> list[VideoExplicative]:
         return self.videos[:max_resultats]
+
+
+class FauxIdentificationEco(PortIdentificationEco):
+    """Simule l'index ECO sans lire de fichier reel."""
+
+    def __init__(self, resultat: InfoEco | None = None) -> None:
+        self.resultat = resultat
+
+    def identifier(self, fen: str) -> InfoEco | None:
+        return self.resultat
 
 
 class FauxModeleDecision:

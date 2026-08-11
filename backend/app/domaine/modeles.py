@@ -61,3 +61,14 @@ class VideoExplicative:
     chaine    : str        # Nom de la chaine qui l'a publiee
     url       : str        # URL complete, prete a afficher/ouvrir
     vues      : int = 0    # Nombre de vues (signal de qualite, cf. filtre)
+
+
+# ------------------------------------------------------------------------
+# Identification ECO d'une position (Encyclopedia of Chess Openings)
+# ------------------------------------------------------------------------
+@dataclass(frozen=True)
+class InfoEco:
+    code      : str    # Code ECO, ex. "B90"
+    nom       : str    # Nom complet, ex. "Sicilian Defense: Najdorf Variation"
+    famille   : str    # Famille seule, ex. "Sicilian Defense"
+    categorie : str    # Categorie ECO (A-E), ex. "Jeux semi-ouverts"

@@ -1,0 +1,48 @@
+<div class="panneau">
+  <h2>Recommandations</h2>
+
+  @if (enCours) {
+    <p class="etat">Analyse en cours...</p>
+  } @else if (erreur) {
+    <p class="etat erreur">{{ erreur }}</p>
+  } @else if (!reponse) {
+    <p class="etat vide">Jouez un coup pour voir les recommandations.</p>
+  } @else {
+
+    @if (reponse.coupsTheoriques.length > 0) {
+      <section>
+        <h3>Coups théoriques</h3>
+        <ul class="coups">
+          @for (coup of reponse.coupsTheoriques; track coup.uci) {
+            <li>
+              <strong>{{ coup.san }}</strong>
+              <span class="detail">{{ coup.nombreParties }} partie(s)</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (reponse.explication) {
+      <section>
+        <h3>Explication</h3>
+        <p>{{ reponse.explication }}</p>
+      </section>
+    }
+
+    @if (reponse.videos.length > 0) {
+      <section>
+        <h3>Vidéos</h3>
+        <ul class="videos">
+          @for (video of reponse.videos; track video.idVideo) {
+            <li>
+              <a [href]="video.url" target="_blank" rel="noopener">{{ video.titre }}</a>
+              <span class="detail">{{ video.chaine }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+  }
+</div>

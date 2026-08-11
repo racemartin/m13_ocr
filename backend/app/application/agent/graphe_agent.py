@@ -1,10 +1,16 @@
 # ############################################################################
-# Assemblage du graphe LangGraph de l'agent
+# Assemblage du graphe LangGraph de l'agent (version de base, sans LLM)
 # ############################################################################
 # Une seule fonction publique, construire_graphe(...), recoit les services
 # d'application deja instancies (meme pattern d'injection que les autres
 # cas d'utilisation composes, cf. ExplorerPositionService) et retourne le
 # graphe compile, pret a etre invoque par la couche API.
+#
+# NOTE : cette fonction reste volontairement inchangee depuis sa version
+# initiale (theorie/Stockfish/RAG, 100% deterministe, sans LLM). La
+# variante avec decision LLM + synthese pedagogique vit a part, dans
+# graphe_agent_llm.py, pour ne jamais faire regresser cet endpoint deja
+# en production (POST /api/v1/agent/invoke).
 
 # Bibliotheques tierces
 from   langgraph.checkpoint.base import BaseCheckpointSaver    # Type generique
@@ -16,6 +22,9 @@ from   app.application.obtenir_coups_theoriques_service import (  # Cas
 )
 from   app.application.evaluer_position_service import (    # Cas
     EvaluerPositionService,                                 # d'usage
+)
+from   app.application.identifier_eco_service import (      # Cas
+    IdentifierEcoService,                                    # d'usage
 )
 from   app.application.rechercher_contexte_ouverture_service import (  # Cas
     RechercherContexteOuvertureService,                                 # RAG
@@ -36,7 +45,8 @@ def construire_graphe(
     service_coups      : ObtenirCoupsTheoriquesService,
     service_evaluation : EvaluerPositionService,
     service_contexte   : RechercherContexteOuvertureService,
-    checkpointer        : BaseCheckpointSaver | None = None,
+    service_eco         : IdentifierEcoService,
+    checkpointer          : BaseCheckpointSaver | None = None,
 ):
     """Construit et compile le graphe de l'agent.
 
@@ -64,7 +74,7 @@ def construire_graphe(
 
     graphe.add_node(
         "rechercher_theorie",
-        fabriquer_noeud_rechercher_theorie(service_coups),
+        fabriquer_noeud_rechercher_theorie(service_coups, service_eco),
     )
     graphe.add_node(
         "evaluer_position",

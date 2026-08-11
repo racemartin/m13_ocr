@@ -23,6 +23,9 @@ from   app.application.obtenir_coups_theoriques_service import (  # Cas
 from   app.application.evaluer_position_service import (    # Cas
     EvaluerPositionService,                                 # d'usage
 )
+from   app.application.identifier_eco_service import (      # Cas d'usage
+    IdentifierEcoService,
+)
 from   app.application.rechercher_contexte_ouverture_service import (  # Cas
     RechercherContexteOuvertureService,                                 # RAG
 )
@@ -37,6 +40,7 @@ log = LogTool(origin="noeuds_agent")
 # ##############################################################################
 def fabriquer_noeud_rechercher_theorie(
     service: ObtenirCoupsTheoriquesService,
+    service_eco: IdentifierEcoService,
 ) -> Callable[[EtatAgent], dict]:
     """Construit le noeud de recherche des coups theoriques."""
 
@@ -47,13 +51,14 @@ def fabriquer_noeud_rechercher_theorie(
         )
         log.PARAMETER_VALUE("fen", etat["fen"])
 
+        eco = service_eco.executer(etat["fen"])
         coups = service.executer(etat["fen"])
 
         log.FINISH_ACTION(
             "noeud_rechercher_theorie", "executer",
             f"{len(coups)} coup(s) theorique(s) trouve(s)",
         )
-        return {"coups_theoriques": coups}
+        return {"eco": eco, "coups_theoriques": coups}
 
     return noeud_rechercher_theorie
 

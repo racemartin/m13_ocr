@@ -20,6 +20,9 @@ from   app.application.obtenir_coups_theoriques_service import (  # Cas
 from   app.application.evaluer_position_service import (    # Cas
     EvaluerPositionService,                                 # d'usage
 )
+from   app.application.identifier_eco_service import (      # Cas
+    IdentifierEcoService,                                    # d'usage
+)
 from   app.application.rechercher_contexte_ouverture_service import (  # Cas
     RechercherContexteOuvertureService,                                 # RAG
 )
@@ -48,9 +51,10 @@ def construire_graphe_llm(
     service_coups      : ObtenirCoupsTheoriquesService,
     service_evaluation : EvaluerPositionService,
     service_contexte   : RechercherContexteOuvertureService,
-    service_videos      : RechercherVideosService,
-    modele_decision      : ChatAnthropic,
-    checkpointer          : BaseCheckpointSaver | None = None,
+    service_eco         : IdentifierEcoService,
+    service_videos        : RechercherVideosService,
+    modele_decision        : ChatAnthropic,
+    checkpointer            : BaseCheckpointSaver | None = None,
 ):
     """Construit et compile la variante du graphe avec decision LLM.
 
@@ -77,7 +81,7 @@ def construire_graphe_llm(
 
     graphe.add_node(
         "rechercher_theorie",
-        fabriquer_noeud_rechercher_theorie(service_coups),
+        fabriquer_noeud_rechercher_theorie(service_coups, service_eco),
     )
     graphe.add_node(
         "evaluer_position",

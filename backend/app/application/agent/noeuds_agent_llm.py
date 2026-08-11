@@ -33,6 +33,31 @@ log = LogTool(origin="noeuds_agent_llm")
 
 
 # ##############################################################################
+# Fonction utilitaire : normalise reponse.content selon le fournisseur LLM
+# ##############################################################################
+def _extraire_texte(contenu) -> str:
+    """Certains fournisseurs (Anthropic) renvoient reponse.content comme
+    une simple chaine. D'autres (Google Gemini, via langchain_google_genai)
+    renvoient une LISTE de blocs, ex. [{'type': 'text', 'text': '...'}].
+    Cette fonction normalise les deux formats vers une chaine simple,
+    quel que soit LLM_PROVIDER."""
+
+    if isinstance(contenu, str):
+        return contenu
+
+    if isinstance(contenu, list):
+        morceaux = []
+        for bloc in contenu:
+            if isinstance(bloc, str):
+                morceaux.append(bloc)
+            elif isinstance(bloc, dict) and "text" in bloc:
+                morceaux.append(bloc["text"])
+        return "".join(morceaux)
+
+    return str(contenu)    # Repli de securite, ne devrait pas arriver
+
+
+# ##############################################################################
 # Schema de sortie structuree du LLM (pas de texte libre a parser)
 # ##############################################################################
 class DecisionVideo(BaseModel):
@@ -208,7 +233,7 @@ def fabriquer_noeud_generer_reponse(
                 "ce qu'il doit retenir de cette position, sans jargon "
                 "technique inutile."
             )
-            explication = reponse.content
+            explication = _extraire_texte(reponse.content)
 
         except Exception as erreur:
             log.LEVEL_6_NOTICE(

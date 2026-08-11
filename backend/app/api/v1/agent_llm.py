@@ -15,6 +15,7 @@ from   pydantic import BaseModel    # Schema de requete
 # Modules internes
 from   app.api.v1.schemas import (    # Schema HTTP
     CoupTheoriqueSchema, EvaluationSchema, ExtraitConnaissanceSchema,
+    InfoEcoSchema,
 )
 from   app.api.v1.videos import VideoSchema    # Reutilise le schema existant
 from   app.core.dependances import obtenir_graphe_agent_llm    # Injection
@@ -35,6 +36,7 @@ class ReponseAgentLLM(BaseModel):
     """Schema HTTP de la reponse de l'agent (variante LLM)."""
 
     fen                : str
+    eco                : InfoEcoSchema | None             = None
     coups_theoriques   : list[CoupTheoriqueSchema]       = []
     evaluation         : EvaluationSchema | None         = None
     contexte_ouverture : list[ExtraitConnaissanceSchema] = []
@@ -84,9 +86,11 @@ def invoquer_agent_llm(
     )
 
     evaluation = resultat.get("evaluation")
+    eco = resultat.get("eco")
 
     return ReponseAgentLLM(
         fen                = requete.fen,
+        eco                = InfoEcoSchema.depuis_domaine(eco) if eco else None,
         coups_theoriques   = [
             CoupTheoriqueSchema.depuis_domaine(coup)
             for coup in resultat.get("coups_theoriques") or []

@@ -1,0 +1,29 @@
+.disposition {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: flex-start;
+}
+
+.zone-tableau {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.zone-tableau h2 {
+  background: #eaeaea;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.zone-tableau button {
+  align-self: flex-start;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f5f5f5;
+  cursor: pointer;
+}
