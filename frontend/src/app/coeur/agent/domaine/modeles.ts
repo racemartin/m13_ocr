@@ -1,16 +1,24 @@
-import { CoupTheorique } from '../../position/domaine/modeles';
+import { CoupTheorique, Evaluation, ExtraitConnaissance } from '../../position/domaine/modeles';
 import { VideoExplicative } from '../../videos/domaine/modeles';
 
+export interface InfoEco {
+  code      : string;
+  nom       : string;
+  famille   : string;
+  categorie : string;
+}
+
 export interface ReponseAgent {
-  fen: string;
-  coupsTheoriques: CoupTheorique[];
-  evaluation: unknown;
-  contexteOuverture: unknown[];
+  fen               : string;
+  eco               : InfoEco | null;
+  coupsTheoriques   : CoupTheorique[];
+  evaluation        : Evaluation | null;
+  contexteOuverture : ExtraitConnaissance[];
 }
 
 export interface ReponseAgentLlm extends ReponseAgent {
-  videos: VideoExplicative[];
-  explication: string;
+  videos      : VideoExplicative[];
+  explication : string;
 }
 
 export interface PortAgentApi {
