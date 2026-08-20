@@ -14,7 +14,12 @@
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.json",
-            "assets": [],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
             "styles": [
               "src/styles.css"
             ],
@@ -23,7 +28,10 @@
             ],
             "allowedCommonJsDependencies": [
               "lodash"
-            ]
+            ],
+            "optimization": {
+              "fonts": false
+            }
           }
         },
         "serve": {

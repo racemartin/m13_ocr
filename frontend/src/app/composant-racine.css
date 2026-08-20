@@ -5,15 +5,22 @@
 
 .menu-lateral {
   flex: 0 0 200px;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--bordure);
   padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
+.logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
 .menu-lateral h1 {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   margin: 0 0 1.5rem;
 }
 
@@ -22,19 +29,21 @@
   padding: 0.6rem 0.9rem;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--rayon-controle);
   cursor: pointer;
-  font-size: 0.95rem;
-  color: #333;
+  font-size: 0.9rem;
+  color: var(--texte-doux);
 }
 
 .menu-lateral button:hover {
-  background: #f2f2f2;
+  background: var(--fond-carte);
+  color: var(--texte);
 }
 
 .menu-lateral button.actif {
-  background: #e0e7ff;
-  font-weight: 600;
+  background: var(--accent-fond);
+  color: var(--accent-texte);
+  font-weight: 500;
 }
 
 .contenu {
