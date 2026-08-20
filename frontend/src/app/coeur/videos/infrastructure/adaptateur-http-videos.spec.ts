@@ -6,7 +6,6 @@ import {
 import { provideHttpClient } from '@angular/common/http';
 
 import { AdaptateurHttpVideos } from './adaptateur-http-videos';
-import { VideoExplicative } from '../domaine/modeles';
 
 describe('AdaptateurHttpVideos', () => {
   let adaptateur: AdaptateurHttpVideos;
@@ -22,16 +21,17 @@ describe('AdaptateurHttpVideos', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('rechercherVideos() appelle GET /api/v1/videos/{ouverture}', async () => {
-    const reponseAttendue: VideoExplicative[] = [
-      { idVideo: 'abc', titre: 'Sicilienne', chaine: 'GothamChess', url: 'https://youtube.com/x', vues: 1000 },
+  it('rechercherVideos() mappe id_video -> idVideo (JSON reel du backend)', async () => {
+    const corpsReelDuBackend = [
+      { id_video: 'abc', titre: 'Sicilienne', chaine: 'GothamChess', url: 'https://youtube.com/x', vues: 1000 },
     ];
     const promesse = adaptateur.rechercherVideos('Sicilienne');
 
     const requete = httpMock.expectOne('/api/v1/videos/Sicilienne');
     expect(requete.request.method).toBe('GET');
-    requete.flush(reponseAttendue);
+    requete.flush(corpsReelDuBackend);
 
-    expect(await promesse).toEqual(reponseAttendue);
+    const resultat = await promesse;
+    expect(resultat[0].idVideo).toBe('abc');
   });
 });
