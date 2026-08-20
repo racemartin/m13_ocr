@@ -1,5 +1,102 @@
-/* Styles globaux de l'application (a completer a l'etape 5) */
+/* ============================================================================
+   Styles globaux -- systeme de design partage par toute l'application
+   ============================================================================
+   Theme CLAIR. Toutes les couleurs/rayons vivent ici en variables CSS --
+   jamais de valeur en dur dans les composants. Pour repasser en sombre un
+   jour, seules les valeurs ci-dessous changent, aucun composant a toucher. */
+
+:root {
+  /* -- Fonds, du plus neutre (page) au plus clair (survol) -- */
+  --fond-page      : #f7f9fc;
+  --fond-carte     : #ffffff;
+  --fond-carte-2   : #f1f4f9;
+  --fond-entree    : #ffffff;
+  --fond-survol    : #eef2f8;
+
+  /* -- Bordures, discretes -- */
+  --bordure        : rgba(15, 23, 42, 0.10);
+  --bordure-forte  : rgba(15, 23, 42, 0.20);
+
+  /* -- Accent (cyan/teal) et sa version tres claire pour badges/icones -- */
+  --accent         : #0891b2;
+  --accent-fond    : rgba(8, 145, 178, 0.10);
+  --accent-texte   : #0e7490;
+
+  /* -- Texte -- */
+  --texte          : #0f172a;
+  --texte-doux     : #475569;
+  --texte-tenue    : #94a3b8;
+
+  /* -- Etat d'erreur -- */
+  --erreur-texte   : #c0392b;
+
+  /* -- Rayons, coherents dans toute l'appli -- */
+  --rayon-carte    : 16px;
+  --rayon-controle : 10px;
+  --rayon-pilule   : 999px;
+
+  /* -- Typographie -- */
+  --police         : 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --police-mono    : 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: sans-serif;
-  margin: 2rem;
+  font-family: var(--police);
+  background: var(--fond-page);
+  color: var(--texte);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.etiquette-mono {
+  font-family: var(--police-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-texte);
+}
+
+input, select, button {
+  font-family: var(--police);
+  font-size: 0.9rem;
+  border-radius: var(--rayon-controle);
+  border: 1px solid var(--bordure);
+  background: var(--fond-entree);
+  color: var(--texte);
+}
+
+input, select {
+  padding: 0.5rem 0.75rem;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+button {
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover {
+  background: var(--fond-survol);
+  border-color: var(--bordure-forte);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
