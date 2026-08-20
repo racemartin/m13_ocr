@@ -9,13 +9,41 @@
     <p class="etat vide">Jouez un coup pour voir les recommandations.</p>
   } @else {
 
+    @if (reponse.eco) {
+      <section class="ouverture-detectee">
+        <p class="etiquette">Ouverture détectée</p>
+        <div class="ligne-titre">
+          <strong>{{ reponse.eco.nom }}</strong>
+          <span class="badge-eco">ECO {{ reponse.eco.code }}</span>
+        </div>
+        @if (reponse.eco.famille !== reponse.eco.nom) {
+          <p class="famille-eco">{{ reponse.eco.famille }}</p>
+        }
+        <p class="categorie-eco">{{ reponse.eco.categorie }}</p>
+      </section>
+    }
+
+    <section class="flux-source">
+      @if (reponse.coupsTheoriques.length > 0) {
+        <span class="badge-flux badge-succes">✓ Théorie trouvée</span>
+        <span class="fleche-flux">→</span>
+        <span class="texte-flux">Stockfish non sollicité</span>
+      } @else if (reponse.evaluation) {
+        <span class="badge-flux badge-neutre">Aucune théorie</span>
+        <span class="fleche-flux">→</span>
+        <span class="texte-flux">Stockfish sollicité</span>
+      }
+    </section>
+
     @if (reponse.coupsTheoriques.length > 0) {
       <section>
         <h3>Coups théoriques</h3>
         <ul class="coups">
           @for (coup of reponse.coupsTheoriques; track coup.uci) {
             <li>
-              <strong>{{ coup.san }}</strong>
+              <button type="button" class="coup-jouable" (click)="jouerCoup.emit(coup.uci)">
+                {{ coup.san }}
+              </button>
               <span class="detail">{{ coup.nombreParties }} partie(s)</span>
             </li>
           }
@@ -26,7 +54,23 @@
     @if (reponse.explication) {
       <section>
         <h3>Explication</h3>
-        <p>{{ reponse.explication }}</p>
+        <p class="explication">
+          @for (segment of segmentsExplication(); track $index) {
+            @switch (segment.type) {
+              @case ('coup') {
+                <button type="button" class="coup-jouable coup-en-ligne" (click)="jouerCoup.emit(segment.texte)">
+                  {{ segment.texte }}
+                </button>
+              }
+              @case ('gras') {
+                <strong>{{ segment.texte }}</strong>
+              }
+              @default {
+                <span>{{ segment.texte }}</span>
+              }
+            }
+          }
+        </p>
       </section>
     }
 

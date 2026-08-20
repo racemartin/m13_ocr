@@ -1,18 +1,73 @@
-<div class="disposition">
-  <div class="zone-tableau">
-    <h2>Échiquier</h2>
-    <ngx-chess-board
-      #tableau
-      [size]="480"
-      [showCoords]="true"
-      (moveChange)="surCoupJoue()"
-    ></ngx-chess-board>
-    <button type="button" (click)="reinitialiser()">Nouvelle partie</button>
+<div class="page">
+
+  <div class="entete">
+    <h1>Play Chess Agent</h1>
+    <div class="mode">Human VS Human</div>
+    <div class="controles-partie">
+      <select [ngModel]="minutesSelectionnees()" (ngModelChange)="minutesSelectionnees.set($event)">
+        <option [ngValue]="3">3 min</option>
+        <option [ngValue]="5">5 min</option>
+        <option [ngValue]="10">10 min</option>
+        <option [ngValue]="15">15 min</option>
+        <option [ngValue]="30">30 min</option>
+      </select>
+      <button type="button" (click)="nouvellePartie()">Nouvelle partie</button>
+    </div>
   </div>
 
-  <app-panneau-recommandations
-    [reponse]="reponse()"
-    [enCours]="enCours()"
-    [erreur]="erreur()"
-  />
+  <div class="corps">
+
+    <div class="zone-plateau">
+      <div class="ligne-joueur">
+        <span class="nom-joueur">Player 1 Name</span>
+        <span class="horloge" [class.actif]="traitBlancs() && horlogeActive()">
+          {{ formaterTemps(tempsBlancs()) }}
+        </span>
+      </div>
+
+      <ngx-chess-board
+        #tableau
+        [size]="480"
+        [showCoords]="true"
+        (moveChange)="surCoupJoue()"
+      ></ngx-chess-board>
+
+      <div class="ligne-joueur">
+        <span class="nom-joueur">Player 2 Name</span>
+        <span class="horloge" [class.actif]="!traitBlancs() && horlogeActive()">
+          {{ formaterTemps(tempsNoirs()) }}
+        </span>
+      </div>
+
+      <div class="bloc-historique">
+        <div class="entete-historique">
+          <h3>Historique</h3>
+          <div class="boutons-navigation">
+            <button type="button" (click)="reculer()" [disabled]="indexAffiche() === 0">◄</button>
+            <button type="button" (click)="avancer()" [disabled]="!enTrainDeConsulter()">►</button>
+          </div>
+        </div>
+        <div class="liste-historique">
+          @for (entree of historique(); track entree.numero) {
+            <div
+              class="ligne-historique"
+              [class.selectionnee]="indexAffiche() === entree.numero"
+              (click)="allerA(entree.numero)"
+            >
+              <span>{{ entree.numero }}.</span>
+              <span>{{ entree.notation }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <app-panneau-recommandations
+      [reponse]="reponse()"
+      [enCours]="enCoursAnalyse()"
+      [erreur]="erreurAnalyse()"
+      (jouerCoup)="jouerCoupSuggere($event)"
+    />
+
+  </div>
 </div>
