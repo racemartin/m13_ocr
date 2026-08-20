@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { NgxChessBoardModule, NgxChessBoardView } from 'ngx-chess-board';
 
 import { ServiceEtatPartie } from '../../coeur/partie/application/service-etat-partie';
@@ -17,6 +18,29 @@ import { ComposantPanneauRecommandations } from
 
 const FEN_POSITION_INITIALE =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+// ------------------------------------------------------------------
+// HttpErrorResponse (Angular) n'herite PAS de Error natif -- sans ce
+// traitement dedie, String(e) retombe sur Object.prototype.toString()
+// et affiche litteralement "[object Object]" (bug reel rencontre en
+// production sur agent-llm/invoke lors d'un 422/401 backend).
+// ------------------------------------------------------------------
+function extraireMessageErreur(e: unknown): string {
+  if (e instanceof HttpErrorResponse) {
+    const detail = e.error?.detail;
+    if (typeof detail === 'string') {
+      return detail;
+    }
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail.map((d) => d.msg ?? JSON.stringify(d)).join(', ');
+    }
+    return `Erreur ${e.status} : ${e.statusText}`;
+  }
+  if (e instanceof Error) {
+    return e.message;
+  }
+  return String(e);
+}
 
 interface EntreeHistorique {
   numero   : number;    // 1, 2, 3... (demi-coup)
@@ -145,7 +169,7 @@ export class ComposantEchiquier implements OnDestroy {
       );
       this.reponse.set(reponse);
     } catch (e) {
-      this.erreurAnalyse.set(e instanceof Error ? e.message : String(e));
+      this.erreurAnalyse.set(extraireMessageErreur(e));
     } finally {
       this.enCoursAnalyse.set(false);
     }
