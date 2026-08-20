@@ -14,6 +14,10 @@
 
 </p>
 
+**Documents complémentaires :**
+- [Support de présentation (M13)](../docs/Suport_de_presentation-M13_Developpez_un_agent_IA_pour_lapprentissage_des_echecs.pdf)
+- [Étude de faisabilité MCP](../docs/Etude_de_faisabilite_V1.pdf)
+
 ## Objectif
 
 POC (Proof of Concept), développé pour la Fédération Française des
