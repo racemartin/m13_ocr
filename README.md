@@ -22,7 +22,7 @@ dans l'apprentissage des **ouvertures d'échecs** : coups théoriques
 (Lichess), évaluation de position (Stockfish), contexte pédagogique sur
 l'ouverture (RAG Wikichess/Wikipédia via Milvus), vidéos explicatives
 (YouTube) et, dans sa variante avancée, une décision et une synthèse en
-langage naturel confiées à un LLM (Claude), le tout via un échiquier
+langage naturel confiées à un LLM (Gemini), le tout via un échiquier
 interactif Angular.
 
 L'architecture cible complète (composants, services Docker, services
@@ -68,7 +68,7 @@ externes, choix techniques) est détaillée dans
 | Théorie des ouvertures | API Lichess (Opening Explorer), repli local Polyglot |
 | RAG / contexte pédagogique | Milvus + `sentence-transformers` |
 | Vidéos explicatives | API YouTube Data v3 (`google-api-python-client`) |
-| Décision et synthèse LLM | Anthropic Claude (`langchain-anthropic`) |
+| Décision et synthèse LLM | Gemini (`gemini-flash-lite-latest`) |
 | Persistance | MongoDB (checkpoints de session LangGraph) |
 | Gestionnaire de paquets Python | `uv` |
 | Orchestration | Docker Compose |
@@ -101,7 +101,7 @@ externes, choix techniques) est détaillée dans
 |                    | (base + variante    |-----> | YouTube Data API | |
 |                    |  LLM)               |       +------------------+ |
 |                    |                     | HTTPS +------------------+ |
-|                    |                     |-----> | API Anthropic    | |
+|                    |                     |-----> | Gemini           | |
 |                    +---------------------+       +------------------+ |
 |                    | port 19530         | port 27017                  |
 |                    v                    v                             |
@@ -125,9 +125,6 @@ externes, choix techniques) est détaillée dans
 - Git
 - Docker et Docker Compose installés sur le poste
 - Clé API YouTube Data v3 valide (voir [Étape 4](#étape-4-vidéos-explicatives-youtube))
-- Clé API Anthropic valide, avec un moyen de paiement configuré sur
-  [platform.claude.com](https://platform.claude.com) (voir
-  [variante LLM](#agent-langgraph-variante-llm-décision-synthèse))
 - (à partir de l'étape 5) Node.js et Angular CLI
 
 ---
@@ -613,6 +610,10 @@ uv run langgraph dev --tunnel
 
 **S'implémentera** : échiquier interactif synchronisé avec l'état FEN,
 panneau de recommandations (coups, contexte, vidéos, explication).
+
+```bash
+http://localhost:8081/
+```
 
 ---
 
