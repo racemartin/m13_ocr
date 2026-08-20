@@ -138,9 +138,23 @@ def fabriquer_noeud_decider_video(
                 f"{resume}\n\n"
                 "Decide si une video explicative de l'ouverture aiderait "
                 "reellement ce joueur, et si oui, quel nom d'ouverture "
-                "utiliser comme requete de recherche."
+                "utiliser comme requete de recherche.\n\n"
+                "Criteres a appliquer strictement :\n"
+                "- Recommande une video UNIQUEMENT si le contexte pedagogique "
+                "converge clairement vers UNE SEULE famille d'ouverture "
+                "(le meilleur score est nettement superieur aux autres, ou "
+                "plusieurs extraits pointent vers la meme ouverture).\n"
+                "- Ne recommande PAS de video si les extraits trouves pointent "
+                "vers des ouvertures differentes et sans lien entre elles : "
+                "cela signifie que la position n'est pas encore assez typee "
+                "pour cibler une video pertinente.\n"
+                "- Un coup theorique connu renforce la confiance dans le nom "
+                "d'ouverture a utiliser comme requete.\n"
+                "- En cas de doute, prefere ne pas recommander de video plutot "
+                "que de risquer une requete hors sujet."
             )
-
+            log.PARAMETER_VALUE("decision", decision.replace("\n", " | "))
+            
         except Exception as erreur:
             # ------------------------------------------------------------
             # Repli : pas de LLM disponible -> heuristique simple plutot
