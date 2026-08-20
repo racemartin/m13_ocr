@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo_ffe.png" alt="Fédération Française des Échecs" width="120">
+  <img src="docs/images/logo-ffe.png" alt="Fédération Française des Échecs" width="120">
 
  # Agent IA pour l'apprentissage des échecs, FFE (POC)
   **Mise en place un Agent IA pour l'apprentissage des échecs**
