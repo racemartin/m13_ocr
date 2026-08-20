@@ -805,13 +805,13 @@ uv run ruff check app/ scripts/ tests/       # lint
 | 1 | Environnement de dev, `docker-compose.yml`, healthcheck | ✅ terminé |
 | 2 | Agent de base : `/moves/{fen}`, `/evaluate/{fen}`, `/explore/{fen}` | ✅ terminé |
 | 3 | RAG Milvus : ingestion, indexation, `/vector-search` | ✅ terminé |
-|, | Agent LangGraph, version de base (`/agent/invoke`) | ✅ terminé |
+| , | Agent LangGraph, version de base (`/agent/invoke`) | ✅ terminé |
 | 4 | Intégration API YouTube (`/videos/{ouverture}`) | ✅ terminé |
-|, | Agent LangGraph, variante LLM (`/agent-llm/invoke`, décision + synthèse) | ✅ terminé |
-|, | LangGraph Studio (exploration/débogage visuel) | ✅ opérationnel |
-| 5 | Interface Angular (`ngx-chessboard`) | à venir |
-| 6 | Containerisation complète + démo | à venir |
-| 7 | Étude de faisabilité : système MCP d'analyse vidéo (conception) | à venir |
+| , | Agent LangGraph, variante LLM (`/agent-llm/invoke`, décision + synthèse) | ✅ terminé |
+| , | LangGraph Studio (exploration/débogage visuel) | ✅ opérationnel |
+| 5 | Interface Angular (`ngx-chess-board`) | ✅ terminé |
+| 6 | Containerisation complète + démo | ✅ terminé |
+| 7 | Étude de faisabilité : système MCP d'analyse vidéo (conception) | ✅ terminé |
 
 | # | Service | Étape | Statut | Commande de test |
 |---|---|---|---|---|
