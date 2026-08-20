@@ -14,10 +14,6 @@
 
 </p>
 
-**Documents complémentaires :**
-- [Support de présentation (M13)](../docs/Suport_de_presentation-M13_Developpez_un_agent_IA_pour_lapprentissage_des_echecs.pdf)
-- [Étude de faisabilité MCP](../docs/Etude_de_faisabilite_V1.pdf)
-
 ## Objectif
 
 POC (Proof of Concept), développé pour la Fédération Française des
@@ -28,6 +24,10 @@ l'ouverture (RAG Wikichess/Wikipédia via Milvus), vidéos explicatives
 (YouTube) et, dans sa variante avancée, une décision et une synthèse en
 langage naturel confiées à un LLM (Gemini), le tout via un échiquier
 interactif Angular.
+
+**Documents complémentaires :**
+- [Support de présentation (M13)](../docs/Suport_de_presentation-M13_Developpez_un_agent_IA_pour_lapprentissage_des_echecs.pdf)
+- [Étude de faisabilité MCP](../docs/Etude_de_faisabilite_V1.pdf)
 
 L'architecture cible complète (composants, services Docker, services
 externes, choix techniques) est détaillée dans
