@@ -29,7 +29,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(),
 
-    { provide: JETON_PORT_VERIFICATION_ETAT, useExisting: AdaptateurHttpVerificationEtat },
+    { provide: JETON_PORT_VERIFICATION_ETAT,  useExisting: AdaptateurHttpVerificationEtat },
     { provide: JETON_PORT_POSITION_API,       useExisting: AdaptateurHttpPosition },
     { provide: JETON_PORT_RECHERCHE_VIDEOS,   useExisting: AdaptateurHttpVideos },
     { provide: JETON_PORT_AGENT_API,          useExisting: AdaptateurHttpAgent },
