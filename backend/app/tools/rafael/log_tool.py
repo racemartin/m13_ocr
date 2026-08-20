@@ -1,7 +1,7 @@
 # =============================================================================
-# src/tools/rafael/log_tool.py — Outil de journalisation colorée en console
+# src/tools/rafael/log_tool.py, Outil de journalisation colorée en console
 #
-# Équivalent Python du LogTool.php (RFC 5424 — The Syslog Protocol)
+# Équivalent Python du LogTool.php (RFC 5424, The Syslog Protocol)
 #
 # Niveaux de log :
 #   1  EMERGENCY  : le système est inutilisable
@@ -268,7 +268,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_1_EMERGENCY(self, where: str, message: str) -> None:
-        """Niveau 1 — EMERGENCY : le système est inutilisable."""
+        """Niveau 1, EMERGENCY : le système est inutilisable."""
         if not self.ACTIF or 1 > self._log_level:
             return
         label   = f"[{'EMERGENCY':<9}]"
@@ -281,7 +281,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_2_ALERT(self, where: str, message: str) -> None:
-        """Niveau 2 — ALERT : une action immédiate est requise."""
+        """Niveau 2, ALERT : une action immédiate est requise."""
         if not self.ACTIF or 2 > self._log_level:
             return
         label   = f"[{'ALERT':<9}]"
@@ -294,7 +294,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_3_CRITICAL(self, where: str, message: str) -> None:
-        """Niveau 3 — CRITICAL : conditions critiques."""
+        """Niveau 3, CRITICAL : conditions critiques."""
         if not self.ACTIF or 3 > self._log_level:
             return
         label   = f"[{'CRITICAL':<9}]"
@@ -307,7 +307,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_4_ERROR(self, where: str, message: str) -> None:
-        """Niveau 4 — ERROR : conditions d'erreur."""
+        """Niveau 4, ERROR : conditions d'erreur."""
         if not self.ACTIF or 4 > self._log_level:
             return
         label   = f"[{'ERROR':<9}]"
@@ -320,7 +320,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_5_WARNING(self, where: str, message: str) -> None:
-        """Niveau 5 — WARNING : conditions d'avertissement."""
+        """Niveau 5, WARNING : conditions d'avertissement."""
         if not self.ACTIF or 5 > self._log_level:
             return
         label   = f"           [{'WARNING':<9}]"
@@ -333,7 +333,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_6_NOTICE(self, where: str, message: str) -> None:
-        """Niveau 6 — NOTICE : condition normale mais significative."""
+        """Niveau 6, NOTICE : condition normale mais significative."""
         if not self.ACTIF or 6 > self._log_level:
             return
         label   = f"[{'NOTICE':<9}]"
@@ -346,7 +346,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_7_INFO(self, where: str, message: str) -> None:
-        """Niveau 7 — INFO : messages informatifs."""
+        """Niveau 7, INFO : messages informatifs."""
         if not self.ACTIF or 7 > self._log_level:
             return
         label   = f"[{'INFO':<9}]"
@@ -360,7 +360,7 @@ class LogTool:
 
     # =========================================================================
     def LEVEL_8_DEBUG(self, where: str, message: str) -> None:
-        """Niveau 8 — DEBUG : messages de débogage."""
+        """Niveau 8, DEBUG : messages de débogage."""
         if not self.ACTIF or 8 > self._log_level:
             return
         label   = f"[{'DEBUG':<9}]"
@@ -438,7 +438,7 @@ class LogTool:
 
 
     # ##########################################################################
-    # ACTIONS (niveau 1 — haut niveau)
+    # ACTIONS (niveau 1, haut niveau)
     # ##########################################################################
 
     # =========================================================================
@@ -686,7 +686,7 @@ class LogTool:
     def log_io_functions(self) -> None:
         """
         Démontre toutes les méthodes de log disponibles.
-        Équivalent de log_io_funtions() en PHP — utile pour tester le rendu.
+        Équivalent de log_io_funtions() en PHP, utile pour tester le rendu.
         """
         self._error_log(
             "         1         2         3         4         5         6"

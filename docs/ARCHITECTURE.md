@@ -1,4 +1,4 @@
-# Architecture — Agent IA pour l'apprentissage des échecs (FFE)
+# Architecture, Agent IA pour l'apprentissage des échecs (FFE)
 
 Ce document décrit l'architecture cible du POC demandé par Alan pour la
 Fédération Française des Échecs, telle qu'elle ressort de la note de
@@ -72,7 +72,7 @@ AGENT ..> MCP : (futur) recherche par\nposition exacte + timestamp
 **Lecture du schéma** : le frontend Angular ne parle qu'au backend
 FastAPI. Toute la logique d'orchestration (quel service appeler, dans
 quel ordre, comment agréger les réponses) vit dans l'agent LangGraph,
-jamais dans Angular ni dans les routes FastAPI elles-mêmes — celles-ci
+jamais dans Angular ni dans les routes FastAPI elles-mêmes, celles-ci
 ne font qu'exposer l'agent.
 
 ---
@@ -137,12 +137,12 @@ backend.
 
 **Pourquoi `etcd` et `minio` apparaissent** : ce sont des dépendances
 internes de Milvus en mode `standalone` (metadata store et stockage
-objet), pas des choix applicatifs — `docker-compose.yml` de Milvus les
+objet), pas des choix applicatifs, `docker-compose.yml` de Milvus les
 inclut par défaut.
 
 ---
 
-## 4. Diagramme de séquence — flux "analyse d'une position"
+## 4. Diagramme de séquence, flux "analyse d'une position"
 
 ```plantuml
 @startuml sequence_analyse
@@ -193,7 +193,7 @@ FRONT --> USER : affichage panneau de recommandations
 | `minio` | Dépendance interne de Milvus (stockage objets) | `minio/minio` |
 
 Pour l'étape 1 uniquement, seul le service `backend` (Hello World +
-`/api/v1/healthcheck`) est démarré — voir `README.md`.
+`/api/v1/healthcheck`) est démarré, voir `README.md`.
 
 ---
 
@@ -218,7 +218,7 @@ Pour l'étape 1 uniquement, seul le service `backend` (Hello World +
   tout le raisonnement à l'agent LangGraph (`app/agent/`). Les
   connecteurs vers Lichess, Stockfish, Milvus et YouTube sont isolés
   dans des modules "adaptateurs" (`app/adapters/`), jamais appelés
-  directement depuis les routes FastAPI — cohérent avec la séparation
+  directement depuis les routes FastAPI, cohérent avec la séparation
   ports/adaptateurs déjà en place dans les autres projets de Rafa.
 
 ---
@@ -232,19 +232,19 @@ techniques ouvertes. Voici mes recommandations, avec alternative :
 ### 8.1 LLM de l'agent LangGraph
 **Recommandation : Claude (API Anthropic), via `langchain-anthropic`.**
 L'agent doit orchestrer de manière fiable 4 outils externes distincts
-(Lichess, Stockfish, Milvus, YouTube) — le tool-calling structuré est
+(Lichess, Stockfish, Milvus, YouTube), le tool-calling structuré est
 donc critique. Alternative viable : GPT-4o (même niveau de fiabilité
 tool-calling, coût similaire). Je déconseille un modèle open-weight
 local (Llama, Mistral) pour ce POC de 2 semaines : le gain de coût ne
 compense pas le temps perdu à fiabiliser le tool-calling.
 
 ### 8.2 Gestionnaire de paquets Python
-**Recommandation : `uv`** plutôt que `pip`/`venv` classique — lockfile
+**Recommandation : `uv`** plutôt que `pip`/`venv` classique, lockfile
 reproductible, installation nettement plus rapide dans le build Docker
 (important vu le délai de 2 semaines).
 
 ### 8.3 Modèle d'embedding pour le RAG Milvus
-**Recommandation : `Qwen3-Embedding-0.6B`** (suggéré par l'énoncé) —
+**Recommandation : `Qwen3-Embedding-0.6B`** (suggéré par l'énoncé),
 léger, multilingue, suffisant pour quelques dizaines d'articles
 Wikichess. Alternative si les résultats en français sont décevants :
 `intfloat/multilingual-e5-base`.
@@ -253,7 +253,7 @@ Wikichess. Alternative si les résultats en français sont décevants :
 **Recommandation : ne jamais héberger les vidéos elles-mêmes.** Le
 système ne stocke que les métadonnées (URL YouTube, timestamp,
 FEN détecté par frame). Réhéberger le contenu vidéo poserait un
-problème de droits d'auteur et un coût de stockage inutile — la valeur
+problème de droits d'auteur et un coût de stockage inutile, la valeur
 ajoutée du système est uniquement de pointer vers le bon instant d'une
 vidéo existante.
 

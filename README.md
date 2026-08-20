@@ -1,4 +1,18 @@
-# Agent IA pour l'apprentissage des échecs — FFE (POC)
+<p align="center">
+  <img src="../docs/logo_ffe.png" alt="Fédération Française des Échecs" width="120">
+
+ # Agent IA pour l'apprentissage des échecs, FFE (POC)
+  **Mise en place un Agent IA pour l'apprentissage des échecs**
+
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)](https://langchain-ai.github.io/langgraph/)
+[![Milvus](https://img.shields.io/badge/Milvus-2.4-00A1EA)](https://milvus.io)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248)](https://www.mongodb.com)
+[![Angular](https://img.shields.io/badge/Angular-18-DD0031)](https://angular.dev)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com)
+
+</p>
 
 ## Objectif
 
@@ -8,7 +22,7 @@ dans l'apprentissage des **ouvertures d'échecs** : coups théoriques
 (Lichess), évaluation de position (Stockfish), contexte pédagogique sur
 l'ouverture (RAG Wikichess/Wikipédia via Milvus), vidéos explicatives
 (YouTube) et, dans sa variante avancée, une décision et une synthèse en
-langage naturel confiées à un LLM (Claude) — le tout via un échiquier
+langage naturel confiées à un LLM (Claude), le tout via un échiquier
 interactif Angular.
 
 L'architecture cible complète (composants, services Docker, services
@@ -25,16 +39,16 @@ externes, choix techniques) est détaillée dans
 - [Démarrage rapide](#démarrage-rapide)
 - **Étapes du projet**, chacune avec *ce qui s'installe*, *ce qui
   s'implémente* et *comment le tester* :
-  - [Étape 1 — Environnement de développement](#étape-1-environnement-de-développement)
-  - [Étape 2 — Agent de base : théorie et moteur](#étape-2-agent-de-base-théorie-et-moteur)
-  - [Étape 3 — RAG (Milvus)](#étape-3-rag-milvus)
-  - [Agent LangGraph — version de base, sans LLM](#agent-langgraph-version-de-base-sans-llm)
-  - [Étape 4 — Vidéos explicatives (YouTube)](#étape-4-vidéos-explicatives-youtube)
-  - [Agent LangGraph — variante LLM (décision + synthèse)](#agent-langgraph-variante-llm-décision-synthèse)
+  - [Étape 1, Environnement de développement](#étape-1-environnement-de-développement)
+  - [Étape 2, Agent de base : théorie et moteur](#étape-2-agent-de-base-théorie-et-moteur)
+  - [Étape 3, RAG (Milvus)](#étape-3-rag-milvus)
+  - [Agent LangGraph, version de base, sans LLM](#agent-langgraph-version-de-base-sans-llm)
+  - [Étape 4, Vidéos explicatives (YouTube)](#étape-4-vidéos-explicatives-youtube)
+  - [Agent LangGraph, variante LLM (décision + synthèse)](#agent-langgraph-variante-llm-décision-synthèse)
   - [LangGraph Studio](#langgraph-studio)
-  - [Étape 5 — Interface Angular](#étape-5-interface-angular-à-venir)
-  - [Étape 6 — Containerisation complète](#étape-6-containerisation-complète-à-venir)
-  - [Étape 7 — Étude de faisabilité MCP](#étape-7-étude-de-faisabilité-mcp-à-venir)
+  - [Étape 5, Interface Angular](#étape-5-interface-angular-à-venir)
+  - [Étape 6, Containerisation complète](#étape-6-containerisation-complète-à-venir)
+  - [Étape 7, Étude de faisabilité MCP](#étape-7-étude-de-faisabilité-mcp-à-venir)
 - [Key Commands (aide-mémoire complet)](#key-commands-aide-mémoire-complet)
 - [Structure du dépôt](#structure-du-dépôt)
 - [Avancement de la mission](#avancement-de-la-mission)
@@ -120,7 +134,7 @@ externes, choix techniques) est détaillée dans
 
 ## Démarrage rapide
 
-C'est la base indispensable avant toute autre étape — sans Docker
+C'est la base indispensable avant toute autre étape, sans Docker
 levé, rien d'autre ne peut être testé.
 
 ```bash
@@ -169,12 +183,12 @@ http://192.168.1.146:8000/docs                  # directement sur l'API (port 80
 > les premières requêtes vers `/vector-search`, `/agent/invoke` et
 > `/agent-llm/invoke` déclenchent le téléchargement à froid du modèle
 > d'embeddings depuis Hugging Face (`Warning: unauthenticated requests
-> to the HF Hub` dans les logs — normal, pas une erreur). Patienter
+> to the HF Hub` dans les logs, normal, pas une erreur). Patienter
 > avant de conclure à un blocage.
 
 ---
 
-## Étape 1 — Environnement de développement
+## Étape 1, Environnement de développement
 
 **S'installe** : Git, Docker Desktop, structure `backend/`/`frontend/`.
 
@@ -189,17 +203,17 @@ curl http://localhost:8000/api/v1/healthcheck
 
 ---
 
-## Étape 2 — Agent de base : théorie et moteur
+## Étape 2, Agent de base : théorie et moteur
 
 **S'installe** : `python-chess`, `stockfish` (binaire + wrapper Python),
 `httpx`.
 
 **S'implémente** :
-- `GET /api/v1/moves/{fen}` — coups théoriques (Lichess, avec repli
+- `GET /api/v1/moves/{fen}`, coups théoriques (Lichess, avec repli
   Polyglot local si Lichess est indisponible)
-- `GET /api/v1/evaluate/{fen}` — évaluation Stockfish (centipawns/mat,
+- `GET /api/v1/evaluate/{fen}`, évaluation Stockfish (centipawns/mat,
   coup recommandé, profondeur)
-- `GET /api/v1/explore/{fen}` — théorie si trouvée, sinon Stockfish
+- `GET /api/v1/explore/{fen}`, théorie si trouvée, sinon Stockfish
   (bifurcation codée à la main, base du futur graphe LangGraph)
 
 **Se teste** :
@@ -216,7 +230,7 @@ uv run python scripts/test_endpoints.py --base-url http://localhost:8000
 > `explorer.lichess.ovh` peut traverser des pannes d'infrastructure.
 > Tant que dure une panne, `/moves/{fen}` répond `200` avec le repli
 > Polyglot (ou liste vide si la ligne n'est pas couverte) au lieu des
-> coups Lichess réels — dégradation gracieuse voulue, pas un bug.
+> coups Lichess réels, dégradation gracieuse voulue, pas un bug.
 > `/evaluate/{fen}` n'est pas concerné (Stockfish tourne localement).
 
 ### Résilience de `/moves/{fen}` : repli local Polyglot
@@ -254,14 +268,14 @@ uv run python scripts/test_endpoints.py --base-url http://localhost:8000
 
 ---
 
-## Étape 3 — RAG (Milvus)
+## Étape 3, RAG (Milvus)
 
 **S'installe** : `pymilvus`, `sentence-transformers`, `beautifulsoup4`.
 
 **S'implémente** :
 - Pipeline d'ingestion : `fetch_wikichess.py` + `fetch_wikipedia.py` →
   `build_corpus.py` → `indexer_corpus.py`
-- `GET /api/v1/vector-search?q=...` — recherche vectorielle de contexte
+- `GET /api/v1/vector-search?q=...`, recherche vectorielle de contexte
 
 ```
 data/seeds/*.csv (curés à la main)
@@ -310,14 +324,14 @@ Réponse attendue (`200`, liste vide = réponse valide, pas une erreur) :
 > ⚠️ **`MILVUS_HOST`** : `localhost` pour un script lancé depuis
 > l'hôte, `milvus-standalone` pour le backend dans le réseau Docker
 > (déjà configuré, ne pas mettre `MILVUS_HOST=localhost` dans le `.env`
-> partagé — casserait le backend en conteneur).
+> partagé, casserait le backend en conteneur).
 >
-> **`data/raw/` et `data/corpus/` sont dans `.gitignore`** — artefacts
+> **`data/raw/` et `data/corpus/` sont dans `.gitignore`**, artefacts
 > régénérables. Seul `data/seeds/*.csv` est versionné.
 
 ### Points de vigilance découverts en conditions réelles
 
-- **API Wikimedia** : exige un `User-Agent` descriptif — sans lui,
+- **API Wikimedia** : exige un `User-Agent` descriptif, sans lui,
   `403 Forbidden` systématique.
 - **Wikichess** : contenu repéré via `<div align="justify">` contenant
   le séparateur `====`, pas un motif de texte global.
@@ -328,11 +342,11 @@ Réponse attendue (`200`, liste vide = réponse valide, pas une erreur) :
 
 ---
 
-## Agent LangGraph — version de base, sans LLM
+## Agent LangGraph, version de base, sans LLM
 
 **S'installe** : `langgraph`, `langgraph-checkpoint-mongodb`, `pymongo`.
 
-**S'implémente** : `POST /api/v1/agent/invoke` — orchestre via un
+**S'implémente** : `POST /api/v1/agent/invoke`, orchestre via un
 `StateGraph` LangGraph les services des étapes 2 et 3, sans LLM,
 100 % déterministe :
 
@@ -421,21 +435,21 @@ Génère `docs/images/graphe_agent.png` (repli en `.mermaid` sans accès
 
 ---
 
-## Étape 4 — Vidéos explicatives (YouTube)
+## Étape 4, Vidéos explicatives (YouTube)
 
 **S'installe** : `google-api-python-client`.
 
 **S'implémente** (architecture hexagonale complète, indépendante du
 graphe) :
 - `PortRechercheVideos` (domaine) → `AdaptateurYoutube` (infrastructure)
-- `RechercherVideosService` (application) — requête intelligente
+- `RechercherVideosService` (application), requête intelligente
   (`"{ouverture} chess opening tutorial explanation"`)
 - `GET /api/v1/videos/{ouverture}`
 - **Filtre qualité** : durée (2-40 min, écarte Shorts et cours de
   plusieurs heures) + vues minimum, via un second appel
   `videos().list()` peu coûteux en quota
 - Gestion des erreurs de quota (`HttpError`) et de réseau
-  (SSL/proxy/DNS) — dégrade toujours vers une liste vide, jamais de 500
+  (SSL/proxy/DNS), dégrade toujours vers une liste vide, jamais de 500
 
 **Se teste**, en 3 niveaux indépendants :
 ```bash
@@ -462,13 +476,13 @@ curl http://localhost:8000/api/v1/videos/Sicilienne
 
 ---
 
-## Agent LangGraph — variante LLM (décision + synthèse)
+## Agent LangGraph, variante LLM (décision + synthèse)
 
 **S'installe** : `langchain-anthropic` (déjà présent depuis le début
 du projet, jamais invoqué avant cette étape).
 
 **S'implémente**, dans des fichiers **séparés** de la version de base
-(`*_llm.py` partout — aucune régression possible sur
+(`*_llm.py` partout, aucune régression possible sur
 `POST /api/v1/agent/invoke`, qui reste inchangé) :
 
 ```
@@ -487,15 +501,15 @@ du projet, jamais invoqué avant cette étape).
 
 ![Graphe de l'agent LangGraph, variante LLM](backend/docs/images/graphe_agent_llm.png)
 
-- **`decider_video`** — le LLM décide, avec sortie structurée
+- **`decider_video`**, le LLM décide, avec sortie structurée
   (Pydantic, pas de texte à parser), s'il vaut la peine de chercher une
   vidéo et avec quel terme (nom réel de l'ouverture, pas le FEN brut)
-- **`generer_reponse`** — synthèse pédagogique en 2-4 phrases pour un
+- **`generer_reponse`**, synthèse pédagogique en 2-4 phrases pour un
   jeune joueur
-- `POST /api/v1/agent-llm/invoke` — même contrat d'entrée que
+- `POST /api/v1/agent-llm/invoke`, même contrat d'entrée que
   `/agent/invoke`, réponse enrichie de `videos` et `explication`
 - **Dégradation gracieuse** : si l'appel LLM échoue (clé absente,
-  quota, réseau), repli sur une heuristique simple — ne bloque jamais
+  quota, réseau), repli sur une heuristique simple, ne bloque jamais
   la réponse HTTP
 
 **Se teste** :
@@ -520,7 +534,7 @@ Réponse attendue, en plus des champs de `/agent/invoke` :
 
 > ⚠️ Nécessite `ANTHROPIC_API_KEY` dans `.env`, obtenue sur
 > [platform.claude.com](https://platform.claude.com) (**pas**
-> `claude.ai`, qui est l'interface de chat, sans clés API) — moyen de
+> `claude.ai`, qui est l'interface de chat, sans clés API), moyen de
 > paiement requis, facturation à l'usage. Modèle par défaut :
 > `claude-haiku-4-5-20251001`, changeable via `ANTHROPIC_MODEL` dans
 > `.env`, sans toucher au code.
@@ -528,7 +542,7 @@ Réponse attendue, en plus des champs de `/agent/invoke` :
 > ⚠️ **Piège rencontré en conditions réelles, à connaître** :
 > `EtatAgent` (`app/application/agent/etat_agent.py`) est un
 > `TypedDict`. LangGraph ignore **silencieusement** toute clé renvoyée
-> par un nœud si elle n'y est pas déclarée — aucune erreur, la valeur
+> par un nœud si elle n'y est pas déclarée, aucune erreur, la valeur
 > disparaît simplement du résultat final. Tout nouveau champ ajouté par
 > un nœud doit être déclaré dans `EtatAgent` **avant** d'écrire le
 > nœud, jamais après.
@@ -552,7 +566,7 @@ Génère `docs/images/graphe_agent_llm.png`.
 
 ## LangGraph Studio
 
-Outil de développement optionnel — IDE visuel pour explorer et
+Outil de développement optionnel, IDE visuel pour explorer et
 déboguer un graphe pas à pas, sans dépendre de Docker.
 
 **S'installe** : `langgraph-cli[inmem]`.
@@ -574,7 +588,7 @@ uv run langgraph dev
 ```
 Ouvrir `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`
 (un compte gratuit [smith.langchain.com](https://smith.langchain.com)
-est nécessaire — Studio est hébergé, mais l'exécution et les données
+est nécessaire, Studio est hébergé, mais l'exécution et les données
 restent 100 % locales).
 
 Pour un accès distant :
@@ -582,7 +596,7 @@ Pour un accès distant :
 uv run langgraph dev --tunnel
 ```
 
-> ⚠️ **Jamais `--host 0.0.0.0` + redirection de port routeur** —
+> ⚠️ **Jamais `--host 0.0.0.0` + redirection de port routeur**,
 > exposerait un serveur de développement sans authentification à tout
 > Internet. `--tunnel` est la voie sûre pour un accès distant.
 >
@@ -593,7 +607,7 @@ uv run langgraph dev --tunnel
 
 ---
 
-## Étape 5 — Interface Angular *(à venir)*
+## Étape 5, Interface Angular *(à venir)*
 
 **S'installera** : Angular CLI, `ngx-chessboard`.
 
@@ -602,14 +616,14 @@ panneau de recommandations (coups, contexte, vidéos, explication).
 
 ---
 
-## Étape 6 — Containerisation complète *(à venir)*
+## Étape 6, Containerisation complète *(à venir)*
 
 **Se vérifiera** : démarrage à froid de bout en bout, persistance des
 volumes Docker recréés, documentation d'installation finale.
 
 ---
 
-## Étape 7 — Étude de faisabilité MCP *(à venir)*
+## Étape 7, Étude de faisabilité MCP *(à venir)*
 
 **Se concevra** (conception uniquement, non développée) : note sur les
 bénéfices/limites, schéma d'architecture MCP, étude de coûts pour le
@@ -622,7 +636,7 @@ Alan comme volet stratégique de la mission.
 
 ```bash
 # ══════════════════════════════════════════════════════════════
-# DOCKER — toujours en premier, base de tout le reste
+# DOCKER, toujours en premier, base de tout le reste
 # ══════════════════════════════════════════════════════════════
 docker compose up -d --build          # build complet + demarrage
 docker compose up -d; docker compose logs -f backend   # demarrage + suivi logs
@@ -631,7 +645,7 @@ docker compose down                   # arret propre
 docker compose build --no-cache backend ; docker compose up -d backend  # rebuild cible
 
 # ══════════════════════════════════════════════════════════════
-# ÉTAPE 1-2 — healthcheck, moves, evaluate
+# ÉTAPE 1-2, healthcheck, moves, evaluate
 # ══════════════════════════════════════════════════════════════
 curl http://localhost:8000/api/v1/healthcheck
 curl http://192.168.1.146:8081/api/v1/healthcheck   # via frontend, reseau local
@@ -641,7 +655,7 @@ uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test 
 uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test moves-invalide
 
 # ══════════════════════════════════════════════════════════════
-# ÉTAPE 3 — ingestion + RAG Milvus
+# ÉTAPE 3, ingestion + RAG Milvus
 # ══════════════════════════════════════════════════════════════
 $env:MILVUS_HOST="localhost"
 uv run python scripts/ingestion/drop_collection.py
@@ -655,7 +669,7 @@ Invoke-WebRequest -Uri "http://localhost:8000/api/v1/vector-search?q=sicilienne"
 Invoke-WebRequest -Uri http://localhost:9091/healthz -UseBasicParsing   # sante Milvus
 
 # ══════════════════════════════════════════════════════════════
-# AGENT LANGGRAPH — base (sans LLM)
+# AGENT LANGGRAPH, base (sans LLM)
 # ══════════════════════════════════════════════════════════════
 uv run pytest tests/test_agent_graphe.py -v
 uv run python scripts/visualiser_graphe.py
@@ -664,7 +678,7 @@ Invoke-RestMethod -Uri "http://localhost:8081/api/v1/agent/invoke" -Method Post 
 docker compose exec mongodb mongosh ffe_agent_checkpoints --eval "db.checkpoints.countDocuments()"
 
 # ══════════════════════════════════════════════════════════════
-# ÉTAPE 4 — vidéos YouTube
+# ÉTAPE 4, vidéos YouTube
 # ══════════════════════════════════════════════════════════════
 uv run python scripts/test_youtube_smoke.py "Sicilian defense chess opening"
 uv run python scripts/test_youtube_adapter.py --ouverture "Ruy Lopez"
@@ -673,7 +687,7 @@ curl http://localhost:8000/api/v1/videos/Sicilienne
 uv run python scripts/test_endpoints.py --base-url http://localhost:8081 --test videos
 
 # ══════════════════════════════════════════════════════════════
-# AGENT LANGGRAPH — variante LLM (décision + synthèse)
+# AGENT LANGGRAPH, variante LLM (décision + synthèse)
 # ══════════════════════════════════════════════════════════════
 uv run pytest tests/test_agent_graphe_llm.py -v
 uv run python scripts/verificar_archivos_llm.py
@@ -770,10 +784,10 @@ uv run ruff check app/ scripts/ tests/       # lint
 | 1 | Environnement de dev, `docker-compose.yml`, healthcheck | ✅ terminé |
 | 2 | Agent de base : `/moves/{fen}`, `/evaluate/{fen}`, `/explore/{fen}` | ✅ terminé |
 | 3 | RAG Milvus : ingestion, indexation, `/vector-search` | ✅ terminé |
-| — | Agent LangGraph, version de base (`/agent/invoke`) | ✅ terminé |
+|, | Agent LangGraph, version de base (`/agent/invoke`) | ✅ terminé |
 | 4 | Intégration API YouTube (`/videos/{ouverture}`) | ✅ terminé |
-| — | Agent LangGraph, variante LLM (`/agent-llm/invoke`, décision + synthèse) | ✅ terminé |
-| — | LangGraph Studio (exploration/débogage visuel) | ✅ opérationnel |
+|, | Agent LangGraph, variante LLM (`/agent-llm/invoke`, décision + synthèse) | ✅ terminé |
+|, | LangGraph Studio (exploration/débogage visuel) | ✅ opérationnel |
 | 5 | Interface Angular (`ngx-chessboard`) | à venir |
 | 6 | Containerisation complète + démo | à venir |
 | 7 | Étude de faisabilité : système MCP d'analyse vidéo (conception) | à venir |
@@ -787,11 +801,11 @@ uv run ruff check app/ scripts/ tests/       # lint
 | 5 | **etcd** (métadonnées Milvus) | 3 | ✅ | `docker compose exec etcd etcdctl endpoint health` |
 | 6 | **minio** (stockage objets Milvus) | 3 | ✅ | `curl -I http://localhost:9002/minio/health/live` |
 | 7 | **Milvus** | 3 | ✅ | `curl http://localhost:9091/healthz` |
-| 8 | **LangGraph** (base) | — | ✅ | `POST /api/v1/agent/invoke` |
+| 8 | **LangGraph** (base) |, | ✅ | `POST /api/v1/agent/invoke` |
 | 9 | **YouTube API** | 4 | ✅ | `curl http://localhost:8000/api/v1/videos/Sicilienne` |
-| 10 | **MongoDB** (checkpoints) | — | ✅ | `mongosh "mongodb://localhost:27017" --eval "db.runCommand({ping:1})"` |
-| 11 | **Anthropic Claude** (décision + synthèse) | — | ✅ | `POST /api/v1/agent-llm/invoke` |
-| 12 | **LangGraph Studio** | — | ✅ | `uv run langgraph dev` |
+| 10 | **MongoDB** (checkpoints) |, | ✅ | `mongosh "mongodb://localhost:27017" --eval "db.runCommand({ping:1})"` |
+| 11 | **Anthropic Claude** (décision + synthèse) |, | ✅ | `POST /api/v1/agent-llm/invoke` |
+| 12 | **LangGraph Studio** |, | ✅ | `uv run langgraph dev` |
 
 ---
 
@@ -807,7 +821,7 @@ uv run ruff check app/ scripts/ tests/       # lint
   volontairement tolérants aux pannes : une indisponibilité externe
   dégrade la réponse (liste vide, repli heuristique), ne fait jamais
   planter l'agent.
-- **`uv run ...` doit toujours être lancé depuis `backend/`** —
+- **`uv run ...` doit toujours être lancé depuis `backend/`**,
   exécuté depuis la racine du dépôt, `uv` ne trouve ni le
   `pyproject.toml`, ni le `.venv`, ni les scripts du projet.
 - **PowerShell natif** : `curl` y est un alias d'`Invoke-WebRequest`,
@@ -815,13 +829,13 @@ uv run ruff check app/ scripts/ tests/       # lint
   `curl.exe` explicitement, `Invoke-RestMethod`, ou WSL2.
 - **`.env` partagé** entre Docker et l'exécution locale : une variable
   utile en local (ex. `MILVUS_HOST=localhost` pour un script lancé
-  hors Docker) peut casser le backend en conteneur si elle y reste —
+  hors Docker) peut casser le backend en conteneur si elle y reste,
   préférer une variable de session (`$env:...`) pour un usage ponctuel.
 - **`EtatAgent`** (`TypedDict`) : LangGraph ignore silencieusement
-  toute clé d'état non déclarée — voir l'avertissement dans la section
+  toute clé d'état non déclarée, voir l'avertissement dans la section
   [variante LLM](#agent-langgraph-variante-llm-décision-synthèse).
 - `backend/.langgraph_api/` (cache runtime de `langgraph dev`) est
-  ignoré par git — se régénère seul, ne jamais le committer.
+  ignoré par git, se régénère seul, ne jamais le committer.
 
 ---
 
@@ -836,4 +850,4 @@ uv run ruff check app/ scripts/ tests/       # lint
 
 ## Licence
 
-MIT License — voir [LICENSE](LICENSE) pour les détails.
+MIT License, voir [LICENSE](LICENSE) pour les détails.
