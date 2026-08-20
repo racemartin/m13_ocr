@@ -604,12 +604,17 @@ uv run langgraph dev --tunnel
 
 ---
 
-## Étape 5, Interface Angular *(à venir)*
+## Étape 5, Interface Angular 
 
-**S'installera** : Angular CLI, `ngx-chessboard`.
+**Installé** : Angular 18 (standalone), `ngx-chess-board@2.2.3`
+(`--legacy-peer-deps`, requis pour la compatibilité avec `@angular/cdk@17`).
 
-**S'implémentera** : échiquier interactif synchronisé avec l'état FEN,
-panneau de recommandations (coups, contexte, vidéos, explication).
+**Implémenté** : échiquier interactif synchronisé avec l'état FEN,
+horloge par joueur, historique de coups navigable (retour/avance),
+panneau de recommandations (coups théoriques cliquables, ouverture
+détectée avec code ECO, explication pédagogique générée par le LLM
+avec coups en gras cliquables, barre d'évaluation, vidéos suggérées),
+panneau d'administration pour tester manuellement chaque endpoint.
 
 ```bash
 http://localhost:8081/
@@ -617,19 +622,34 @@ http://localhost:8081/
 
 ---
 
-## Étape 6, Containerisation complète *(à venir)*
+## Étape 6, Containerisation complète 
 
-**Se vérifiera** : démarrage à froid de bout en bout, persistance des
-volumes Docker recréés, documentation d'installation finale.
+**Vérifié** : démarrage à froid de bout en bout (sept conteneurs :
+frontend, backend, etcd, minio, milvus, mongodb), dépendances
+ordonnées via `depends_on` + `condition: service_healthy`, cinq
+volumes Docker nommés persistants (`milvus_data`, `etcd_data`,
+`minio_data`, `mongo_data`, `huggingface_cache`).
+
+```bash
+docker compose down -v      # reset complet, y compris les volumes
+docker compose up -d --build
+docker compose ps           # verifie que tous les services sont "healthy"
+```
 
 ---
 
-## Étape 7, Étude de faisabilité MCP *(à venir)*
+## Étape 7, Étude de faisabilité MCP 
 
-**Se concevra** (conception uniquement, non développée) : note sur les
-bénéfices/limites, schéma d'architecture MCP, étude de coûts pour le
-système avancé d'analyse vidéo (board-to-FEN + timestamp), demandé par
-Alan comme volet stratégique de la mission.
+**Conçu** (conception uniquement, non développée) : note sur les
+bénéfices/limites, schéma d'architecture MCP, étude de coûts (CAPEX +
+OPEX) pour le système avancé d'analyse vidéo (board-to-FEN +
+timestamp), demandé par Alan comme volet stratégique de la mission.
+Principe directeur : le système ajoute une couche de précision qui
+s'active lorsque c'est possible, avec une dégradation élégante
+lorsque ce n'est pas le cas.
+
+Document complet : [`docs/Etude_de_faisabilite_V1.pdf`](docs/Etude_de_faisabilite_V1.pdf)
+
 
 ---
 
