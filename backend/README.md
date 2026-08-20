@@ -1,19 +1,5 @@
-<p align="center">
-  <img src="../docs/logo_ffe.png" alt="Fédération Française des Échecs" width="120">
 
-  # FFE Chess Agent
-  **Mise en place un Agent IA pour l'apprentissage des échecs**
-
-[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-1C3C3C)](https://langchain-ai.github.io/langgraph/)
-[![Milvus](https://img.shields.io/badge/Milvus-2.4-00A1EA)](https://milvus.io)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248)](https://www.mongodb.com)
-[![Angular](https://img.shields.io/badge/Angular-18-DD0031)](https://angular.dev)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com)
-
-</p>
-
+# Backend, FFE Chess Agent
 API FastAPI et agent LangGraph du POC "Agent IA pour l'apprentissage
 des échecs" (FFE). Voir le [`README.md`](../README.md) et
 [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) à la racine du
